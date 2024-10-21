@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barclays Dashboard</title>
+    <link rel="stylesheet" href="public/css/custom-style.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/cupertino/jquery-ui.css">
+    <link
+      href="public/vendor/fontawesome-free/css/all.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link href="public/fonts/Poppins/stylesheet.css" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Custom styles for this template-->
+    <link href="public/css/sb-admin-2.min.css" rel="stylesheet" />
+    <link href="public/css/custome-white.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+</head>
+<body id="page-top" class="page-overview sidebar-toggled">
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <!-- End of Sidebar -->
+        <!-- Content Wrapper -->
+
+        <div id="content-wrapper" class="d-flex flex-column">
+          <!-- Main Content -->
+          <div id="content">
+            <!-- Topbar -->
+            <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                <a class="navbar-brand" href="#">
+                    <img src="public/Img/logo1.png" alt="Logo" class="d-inline-block align-top" style="max-height: 40px;">
+                </a>
+            </nav>
+            <!-- End of Topbar -->
+            <!-- Begin Page Content -->
+            <div class="container-fluid">
+  
+              <!-- Content Row -->
+              <div class="row">
+                <div class="col-xl-12 col-lg-5 small-boxes">
+                  <!-- Earnings (Monthly) Card Example -->
+                  <div class="row">
+                    <div class="col-xl-3 col-md-4 mb-4">
+                      <div class="card-co2 rounded shadow h-100 py-2">
+                        <div class="card-body VrtCenter">
+                          <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                              <div
+                                class="text-xs font-weight-bold text-kpi  text-uppercase mb-1"
+                              >
+                                Total Co2 Emission 
+                              </div>
+                              <div class="h5 mb-0 font-weight-bold text-white">
+                                0
+                              </div>
+                            </div>
+                            <div class="col-auto">
+                              <i class="fas fa-hand-holding-heart fa-2x text-white"></i>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-xl-3 col-md-4 mb-4">
+                      <div class="card-dom-water rounded shadow h-100 py-2">
+                        <div class="card-body VrtCenter">
+                          <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                              <div class="text-xs font-weight-bold text-kpi text-uppercase mb-1">
+                                Total Domestic Water Used
+                              </div>
+                              <div class="h5 mb-0 font-weight-bold text-white">
+                                0
+                              </div>
+                            </div>
+                            <div class="col-auto">
+                              <i
+                                class="fas fa-tint fa-2x text-white" 
+                              ></i>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-xl-3 col-md-4 mb-4">
+                      <div class="card-flu-water rounded shadow h-100 py-2">
+                        <div class="card-body VrtCenter">
+                          <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                              <div
+                                class="text-xs font-weight-bold text-kpi text-uppercase mb-1"
+                              >
+                                Total Flushing Water Used
+                              </div>
+                              <div class="h5 mb-0 font-weight-bold text-white">
+                                0
+                              </div>
+                            </div>
+                            <div class="col-auto">
+                              <i
+                                class="fas fa-chart-line fa-2x text-white"
+                              ></i>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+  
+                    <!-- Pending Requests Card Example -->
+                    <div class="col-xl-3 col-md-4 mb-4">
+                      <div class="card-power rounded shadow h-100 py-2">
+                        <div class="card-body VrtCenter">
+                          <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                              <div
+                                class="text-xs font-weight-bold text-kpi text-uppercase mb-1"
+                              >
+                                Total Power Consumption
+                              </div>
+                              <div class="h5 mb-0 font-weight-bold text-white">
+                                0
+                              </div>
+                            </div>
+                            <div class="col-auto">
+                              <i
+                                class="fas fa-bolt fa-2x text-white"
+                              ></i>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+  
+              <div class="row">
+                <!-- CO2 Emission Chart -->
+                <div class="col-xl-4 col-lg-4">
+                  <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                      <h6 class="m-0 font-weight-bold text-primary">CO2 Emission in Ton / User</h6>
+                      <div class="dropdown">
+                        <button class="btn chart-btn border-0 text-primary" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="fas fa-calendar-alt"></i> 
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                          <li><button class="dropdown-item" id="sav_monthly_btn"  href="#"><i class="fas fa-calendar-alt"></i> Monthly</button></li>
+                          <li><button class="dropdown-item abc" id="sav_yearly_btn" href="#"><i class="fas fa-calendar-check"></i> Yearly</button></li>
+                          <li><button class="dropdown-item" id="customRangeBtn1" href="#"><i class="fas fa-calendar"></i> Custom Range</button></li>
+                          <li><button class="dropdown-item abc" id="sav_daily_btn" href="#"><i class="fas fa-calendar-day"></i> Daily</button></li>
+                        </ul>
+                      </div> 
+                    </div>
+                    <input type="text" name="daterange" style="display:none;" />
+                      <div class="card-body">
+                        <div class="chart-area">
+                          <div id="chartdiv"></div>
+                        </div>
+                        <!-- <div class="mb-3">
+                          <div class="d-flex">
+                            <div class="form-group mb-2 me-2" style="margin-right: 1rem;">
+                              <label for="startDate" class="me-2">Start Date:</label>
+                              <input type="date" id="startDate" class="form-control form-control-sm" style="width: 150px;">
+                            </div>
+                            <div class="form-group mb-2">
+                              <label for="endDate" class="me-2">End Date:</label>
+                              <input type="date" id="endDate" class="form-control form-control-sm" style="width: 150px;">
+                            </div>
+                          </div>
+                          <div class="d-flex mt-2">
+                            <button id="sav_daily_btn" class=" abc chart-button mx-1">Daily</button>
+                            <button id="sav_monthly_btn" class="chart-button mx-1">Monthly</button>
+                            <button id="sav_yearly_btn" class="abc chart-button mx-1">Yearly</button>
+                          </div>
+                        </div> -->
+                        <!-- <div class="calendar-container">
+                            <h6>Select Start Date</h6>
+                            <input type="text" id="startDate" class="form-control" placeholder="Start Date" readonly>
+                            <h6 class="mt-3">Select End Date</h6>
+                            <input type="text" id="endDate" class="form-control" placeholder="End Date" readonly>
+                            <button class="btn btn-primary mt-3" id="applyDateRange">Apply</button>
+                        </div> -->
+                    </div>
+                  </div>
+                </div>
+              
+                <!-- Water Consumption Chart -->
+                <div class="col-xl-4 col-lg-4">
+                  <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                      <h6 class="m-0 font-weight-bold text-primary">Water Consumption Per User</h6>
+                      <div class="dropdown">
+                        <button class="btn chart-btn border-0 text-primary" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="fas fa-calendar-alt"></i> 
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                          <li><button class="dropdown-item" id="sav_monthly_water"  href="#"><i class="fas fa-calendar-alt"></i> Monthly</button></li>
+                          <li><button class="dropdown-item " id="sav_yearly_water" href="#"><i class="fas fa-calendar-check"></i> Yearly</button></li>
+                          <li><button class="dropdown-item" id="customRangeBtn" href="#"><i class="fas fa-calendar"></i> Custom Range</button></li>
+                          <li><button class="dropdown-item " id="sav_daily_water" href="#"><i class="fas fa-calendar-day"></i> Daily</button></li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <div class="chart-area">
+                        <div id="chartdiv1"></div>
+                      </div>
+                      <!-- <div class="mb-3">
+                        <div class="d-flex">
+                          <div class="form-group mb-2 me-2" style="margin-right: 1rem;">
+                            <label for="startDateWater" class="me-2">Start Date:</label>
+                            <input type="date" id="startDateWater" class="form-control form-control-sm" style="width: 150px;">
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="endDateWater" class="me-2">End Date:</label>
+                            <input type="date" id="endDateWater" class="form-control form-control-sm" style="width: 150px;" onchange="lineChart1()">
+                          </div>
+                        </div>
+                        <div class="d-flex mt-2">
+                          <button id="sav_daily_water" class=" xyz chart-button mx-1">Daily</button>
+                          <button id="sav_monthly_water" class="chart-button mx-1">Monthly</button>
+                          <button id="sav_yearly_water" class=" xyz chart-button mx-1">Yearly</button>
+                        </div>
+                      </div> -->
+                    </div>
+                  </div>
+                </div>
+                 <!-- <div class="col-xl-4 col-lg-4">
+                  <div class="card shadow mb-4">
+                      <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                          <h6 class="m-0 font-weight-bold text-primary">Water Consumption Per User</h6>
+                      </div>
+                      <div class="card-body">
+                          <div class="row">
+                              <div class="col-4 mb-0 text-center" style="font-size: 1.25rem; font-weight: bold; color: #2A52BE;">
+                                  Total Water Used: <span id="totalWaterAmount">0</span> Liters
+                              </div>
+                              <div class="col-8">
+                                  <div class="chart-area">
+                                      <div id="chartdiv1" style="height: 300px;"></div>
+                                  </div>
+                              </div>
+                          </div>
+                          <div class="mb-3">
+                              <div class="d-flex">
+                                  <div class="form-group mb-2 me-2" style="margin-right: 1rem;">
+                                      <label for="startDateWater" class="me-2">Start Date:</label>
+                                      <input type="date" id="startDateWater" class="form-control form-control-sm" style="width: 150px;">
+                                  </div>
+                                  <div class="form-group mb-2">
+                                      <label for="endDateWater" class="me-2">End Date:</label>
+                                      <input type="date" id="endDateWater" class="form-control form-control-sm" style="width: 150px;" onchange="lineChart1()">
+                                  </div>
+                              </div>
+                              <div class="d-flex mt-2">
+                                  <button id="sav_daily_water" class="xyz chart-button mx-1">Daily</button>
+                                  <button id="sav_monthly_water" class="chart-button mx-1">Monthly</button>
+                                  <button id="sav_yearly_water" class="xyz chart-button mx-1">Yearly</button>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div> -->
+              
+                <!-- Power Consumption Chart -->
+                <div class="col-xl-4 col-lg-4">
+                  <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                      <h6 class="m-0 font-weight-bold text-primary">Power Consumption</h6>
+                      <div class="dropdown">
+                        <button class="btn chart-btn border-0 text-primary" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="fas fa-calendar-alt"></i> 
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                          <li><button class="dropdown-item" id="sav_monthly_power"  href="#"><i class="fas fa-calendar-alt"></i> Monthly</button></li>
+                          <li><button class="dropdown-item" id="sav_yearly_power" href="#"><i class="fas fa-calendar-check"></i> Yearly</button></li>
+                          <li><button class="dropdown-item" id="customRangeBtn" href="#"><i class="fas fa-calendar"></i> Custom Range</button></li>
+                          <li><button class="dropdown-item" id="sav_daily_power" href="#"><i class="fas fa-calendar-day"></i> Daily</button></li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <div class="chart-area">
+                        <div id="chartdiv2" class="d-inline-block ct-perfect-fourth"></div>
+                      </div>
+                      <!-- <div class="mb-3">
+                        <div class="d-flex">
+                          <div class="form-group mb-2 me-2" style="margin-right: 1rem;">
+                            <label for="startDatePower" class="me-2">Start Date:</label>
+                            <input type="date" id="startDatePower" class="form-control form-control-sm" style="width: 150px;" onchange="barChart()">
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="endDatePower" class="me-2">End Date:</label>
+                            <input type="date" id="endDatePower" class="form-control form-control-sm" style="width: 150px;" onchange="barChart()">
+                          </div>
+                        </div>
+                        <div class="d-flex mt-2">
+                          <button id="sav_daily_power" class=" power chart-button mx-1">Daily</button>
+                          <button id="sav_monthly_power" class="chart-button mx-1">Monthly</button>
+                          <button id="sav_yearly_power" class="power chart-button mx-1">Yearly</button>
+                        </div>
+                      </div> -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="row">
+                <!-- Occupancy Efficiency Chart -->
+                <div class="col-xl-4 col-lg-4">
+                  <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                      <h6 class="m-0 font-weight-bold text-primary">Occupancy Efficiency (%)</h6>
+                      <div class="dropdown">
+                        <button class="btn chart-btn border-0 text-primary" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="fas fa-calendar-alt"></i> 
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                          <li><button class="dropdown-item" id="sav_monthly_occupancy"  href="#"><i class="fas fa-calendar-alt"></i> Monthly</button></li>
+                          <li><button class="dropdown-item abc" id="sav_yearly_occupancy" href="#"><i class="fas fa-calendar-check"></i> Yearly</button></li>
+                          <li><button class="dropdown-item" id="customRangeBtn" href="#"><i class="fas fa-calendar"></i> Custom Range</button></li>
+                          <li><button class="dropdown-item abc" id="sav_daily_occupancy" href="#"><i class="fas fa-calendar-day"></i> Daily</button></li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <div class="chart-area">
+                        <div id="chartdiv3"></div>
+                      </div>
+                      <!-- <div class="mb-3">
+                        <div class="d-flex">
+                          <div class="form-group mb-2 me-2" style="margin-right: 1rem;">
+                            <label for="startDateOccupancy" class="me-2">Start Date:</label>
+                            <input type="date" id="startDateOccupancy" class="form-control form-control-sm" style="width: 150px;">
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="endDateOccupancy" class="me-2">End Date:</label>
+                            <input type="date" id="endDateOccupancy" class="form-control form-control-sm" style="width: 150px;" onchange="occupacyLine()">
+                          </div>
+                        </div>
+                        <div class="d-flex mt-2">
+                          <button id="sav_daily_occupancy" class="occupancy chart-button mx-1" >Daily</button>
+                          <button id="sav_monthly_occupancy" class="chart-button mx-1" >Monthly</button>
+                          <button id="sav_yearly_occupancy" class="occupancy chart-button mx-1">Yearly</button>
+                        </div>
+                      </div> -->
+                    </div>
+                  </div>
+                </div>
+              
+                <!-- Indoor Air Quality Chart -->
+                <div class="col-xl-4 col-lg-4">
+                  <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                      <h6 class="m-0 font-weight-bold text-primary">Indoor Air Quality</h6>
+                      <div class="dropdown">
+                        <button class="btn chart-btn border-0 text-primary" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="fas fa-calendar-alt"></i> 
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                          <li><button class="dropdown-item" id="sav_monthly_iaq"  href="#"><i class="fas fa-calendar-alt"></i> Monthly</button></li>
+                          <li><button class="dropdown-item abc" id="sav_yearly_iaq" href="#"><i class="fas fa-calendar-check"></i> Yearly</button></li>
+                          <li><button class="dropdown-item" id="customRangeBtn" href="#"><i class="fas fa-calendar"></i> Custom Range</button></li>
+                          <li><button class="dropdown-item abc" id="sav_daily_iaq" href="#"><i class="fas fa-calendar-day"></i> Daily</button></li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <div class="chart-area">
+                        <div id="chartdiv4" class="d-inline-block"></div>
+                      </div>
+                      <!-- <div class="mb-3">
+                        <div class="d-flex">
+                          <div class="form-group mb-2 me-2" style="margin-right: 1rem;">
+                            <label for="startDateIAQ" class="me-2">Start Date:</label>
+                            <input type="date" id="startDateIAQ" class="form-control form-control-sm" style="width: 150px;" onchange="createBarChart()" >
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="endDateIAQ" class="me-2">End Date:</label>
+                            <input type="date" id="endDateIAQ" class="form-control form-control-sm" style="width: 150px;" onchange="createBarChart()">
+                          </div>
+                        </div>
+                        <div class="d-flex mt-2">
+                          <button id="sav_daily_iaq" class="chart-button mx-1" onclick="replaceIndoorChart(createPieChart)">Daily</button>
+                          <button id="sav_monthly_iaq" class="chart-button mx-1" onclick="replaceIndoorChart(aqiBarChart)">Monthly</button>
+                          <button id="sav_yearly_iaq" class="chart-button mx-1"onclick="replaceIndoorChart(createPieChart)">Yearly</button>
+                        </div>
+                      </div> -->
+                    </div>
+                  </div>
+                </div>
+              
+                <!-- Energy Performance Index Chart -->
+                <div class="col-xl-4 col-lg-4">
+                  <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                      <h6 class="m-0 font-weight-bold text-primary">Energy Performance Index (EPI)</h6>
+                      <div class="dropdown">
+                        <button class="btn chart-btn border-0 text-primary" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="fas fa-calendar-alt"></i> 
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                          <li><button class="dropdown-item" id="sav_monthly_epi"  href="#"><i class="fas fa-calendar-alt"></i> Monthly</button></li>
+                          <li><button class="dropdown-item abc" id="sav_yearly_epi" href="#"><i class="fas fa-calendar-check"></i> Yearly</button></li>
+                          <li><button class="dropdown-item" id="customRangeBtn" href="#"><i class="fas fa-calendar"></i> Custom Range</button></li>
+                          <li><button class="dropdown-item abc" id="sav_daily_epi" href="#"><i class="fas fa-calendar-day"></i> Daily</button></li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <div class="chart-area">
+                        <div id="chartdiv5" class="d-inline-block"></div>
+                      </div>
+                      <!-- <div class="mb-3">
+                        <div class="d-flex">
+                          <div class="form-group mb-2 me-2" style="margin-right: 1rem;">
+                            <label for="startDateEPI" class="me-2">Start Date:</label>
+                            <input type="date" id="startDateEPI" class="form-control form-control-sm" style="width: 150px;">
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="endDateEPI" class="me-2">End Date:</label>
+                            <input type="date" id="endDateEPI" class="form-control form-control-sm" style="width: 150px;" onchange="epiLine()">
+                          </div>
+                        </div>
+                        <div class="d-flex mt-2">
+                          <button id="sav_daily_epi" class="chart-button mx-1" onclick="deleteChart(epiChart)">Daily</button>
+                          <button id="sav_monthly_epi" class="chart-button mx-1" onclick="deleteChart(epiBarChart)">Monthly</button>
+                          <button id="sav_yearly_epi" class="chart-button mx-1"onclick="deleteChart(epiChart)">Yearly</button>
+                        </div>
+                      </div> -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <!-- CO2 Emission Chart -->
+                <div class="col-xl-4 col-lg-4">
+                  <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                      <h6 class="m-0 font-weight-bold text-primary">Occupancy Efficiency</h6>
+                    </div>
+                    <div class="card-body">
+                      <div class="chart-area">
+                        <div id="chartdiv6" class="d-inline-block"></div>
+                      </div>
+                      <div class="mb-3">
+                        <div class="d-flex">
+                          <div class="form-group mb-2 me-2" style="margin-right: 1rem;" >
+                            <label for="startDate" class="me-2" >Start Date:</label>
+                            <input type="date" id="startDatep" class="form-control form-control-sm" style="width: 150px;">
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="endDate" class="me-2">End Date:</label>
+                            <input type="date" id="endDatep" class="form-control form-control-sm" style="width: 150px;" onchange="lineChart2()">
+                          </div>
+                        </div>
+                        <div id="buttonContainer" class="d-flex mt-2">
+                          <button id="sav_daily_btn1" class="abc chart-button mx-1">Daily</button>
+                          <button id="sav_monthly_btn2" class="chart-button mx-1" >Monthly</button>
+                          <button id="sav_yearly_btn3" class="abc chart-button mx-1">Yearly</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              
+                <!-- Water Consumption Chart -->
+                <!-- <div class="col-xl-4 col-lg-4">
+                  <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                      <h6 class="m-0 font-weight-bold text-primary">Water Consumption Per User</h6>
+                    </div>
+                    <div class="card-body">
+                      <div class="chart-area">
+                        <div id="chartdiv7"></div>
+                      </div>
+                      <div class="mb-3">
+                        <div class="d-flex">
+                          <div class="form-group mb-2 me-2" style="margin-right: 1rem;">
+                            <label for="startDateWater" class="me-2">Start Date:</label>
+                            <input type="date" id="startDateWater" class="form-control form-control-sm" style="width: 150px;">
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="endDateWater" class="me-2">End Date:</label>
+                            <input type="date" id="endDateWater" class="form-control form-control-sm" style="width: 150px;" onchange="lineChart1()">
+                          </div>
+                        </div>
+                        <div class="d-flex mt-2">
+                          <button id="sav_daily_water" class=" xyz chart-button mx-1">Daily</button>
+                          <button id="sav_monthly_water" class="chart-button mx-1">Monthly</button>
+                          <button id="sav_yearly_water" class=" xyz chart-button mx-1">Yearly</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div> -->
+                 <!-- <div class="col-xl-4 col-lg-4">
+                  <div class="card shadow mb-4">
+                      <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                          <h6 class="m-0 font-weight-bold text-primary">Water Consumption Per User</h6>
+                      </div>
+                      <div class="card-body">
+                          <div class="row">
+                              <div class="col-4 mb-0 text-center" style="font-size: 1.25rem; font-weight: bold; color: #2A52BE;">
+                                  Total Water Used: <span id="totalWaterAmount">0</span> Liters
+                              </div>
+                              <div class="col-8">
+                                  <div class="chart-area">
+                                      <div id="chartdiv1" style="height: 300px;"></div>
+                                  </div>
+                              </div>
+                          </div>
+                          <div class="mb-3">
+                              <div class="d-flex">
+                                  <div class="form-group mb-2 me-2" style="margin-right: 1rem;">
+                                      <label for="startDateWater" class="me-2">Start Date:</label>
+                                      <input type="date" id="startDateWater" class="form-control form-control-sm" style="width: 150px;">
+                                  </div>
+                                  <div class="form-group mb-2">
+                                      <label for="endDateWater" class="me-2">End Date:</label>
+                                      <input type="date" id="endDateWater" class="form-control form-control-sm" style="width: 150px;" onchange="lineChart1()">
+                                  </div>
+                              </div>
+                              <div class="d-flex mt-2">
+                                  <button id="sav_daily_water" class="xyz chart-button mx-1">Daily</button>
+                                  <button id="sav_monthly_water" class="chart-button mx-1">Monthly</button>
+                                  <button id="sav_yearly_water" class="xyz chart-button mx-1">Yearly</button>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div> -->
+              
+                <!-- Power Consumption Chart -->
+                <!-- <div class="col-xl-4 col-lg-4">
+                  <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                      <h6 class="m-0 font-weight-bold text-primary">Power Consumption</h6>
+                    </div>
+                    <div class="card-body">
+                      <div class="chart-area">
+                        <div id="chartdiv8" class="d-inline-block ct-perfect-fourth"></div>
+                      </div>
+                      <div class="mb-3">
+                        <div class="d-flex">
+                          <div class="form-group mb-2 me-2" style="margin-right: 1rem;">
+                            <label for="startDatePower" class="me-2">Start Date:</label>
+                            <input type="date" id="startDatePower" class="form-control form-control-sm" style="width: 150px;" onchange="barChart()">
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="endDatePower" class="me-2">End Date:</label>
+                            <input type="date" id="endDatePower" class="form-control form-control-sm" style="width: 150px;" onchange="barChart()">
+                          </div>
+                        </div>
+                        <div class="d-flex mt-2">
+                          <button id="sav_daily_power" class=" power chart-button mx-1">Daily</button>
+                          <button id="sav_monthly_power" class="chart-button mx-1">Monthly</button>
+                          <button id="sav_yearly_power" class="power chart-button mx-1">Yearly</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div> -->
+              </div>
+              
+            </div>
+            <!-- /.container-fluid -->
+          </div>
+          <!-- End of Main Content -->
+  
+          <!-- Footer -->
+          <footer class="sticky-footer bg-white">
+            <div class="container my-auto">
+              <div class="copyright text-center my-auto">
+                <span>Copyright &copy; Your Website 2022</span>
+              </div>
+            </div>
+          </footer>
+          <!-- End of Footer -->
+        </div>
+        <!-- End of Content Wrapper -->
+      </div>
+    
+      <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+      <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+      <script src="https://cdn.amcharts.com/lib/4/themes/dark.js"></script>
+      <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+      <script src="https://cdn.amcharts.com/lib/4/plugins/rangeSelector.js"></script>
+      <script src="https://cdn.amcharts.com/lib/4/lang/es_ES.js"></script>
+      <script src="https://cdn.amcharts.com/lib/4/plugins/rangeSelector.js"></script>
+      <script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
+      <script src="https://www.amcharts.com/lib/3/serial.js"></script>
+      <script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
+      <script src="https://www.amcharts.com/lib/3/themes/black.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.38.0/apexcharts.min.js"></script>
+      <script src="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
+      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script> 
+      <script  src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+      <!-- CO2 Emission Donut Chart -->
+      <script src="public/js/test.js"></script>
+      <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script>
+  $(document).ready(function() {
+      // Initialize Date Range Picker
+      $('#customRangeBtn').on('click', function() {
+          // Show Date Range Picker
+          $('input[name="daterange"]').daterangepicker({
+              opens: 'center',
+              startDate: moment().startOf('month'), // default start date
+              endDate: moment(),                    // default end date
+          }, function(start, end) {
+              // Update button text directly with selected date range
+              $('#dropdownMenuButton1').html('<i class="fas fa-calendar-alt"></i> ' + start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
+          });
+      });
+  });
+  </script>
+      <!-- <script>
+        $(document).ready(function(){
+          let start;
+          let end;
+          $('#date_picker1').datepicker({
+            dateFormat:'dd-mm-yy'
+          });
+          $('#date_picker2').datepicker({
+            dateFormat:'dd-mm-yy'
+          });
+          $('#date_picker1').change(function(){
+            start=$(this).datepicker('getDate');
+            $('#date_picker2').datepicker('option','minDate',start);
+          });
+          $('#date_picker2').change(function(){
+            start=$(this).datepicker('getDate');
+            $('#date_picker1').datepicker('option','maxDate',start);
+          });
+        })
+      </script> -->
+    
+</body>
+</html>

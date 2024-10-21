@@ -1,0 +1,119 @@
+.card-co2{
+  /* background-color: #f8acac; */
+    background: linear-gradient(
+      to right,
+      #EB3678,#FF8A8A,#FF6500
+    );
+  }
+
+.card-dom-water{
+  /* background-color: #6895D2; */
+    background: linear-gradient(
+      to right,
+      #4D96FF,#6895D2,#0079FF
+    );
+}
+.card-flu-water{
+  /* background-color: #C683D7; */
+    background: linear-gradient(
+      to right,
+      #C65BCF,#C683D7,#F266AB
+    );
+}
+.card-power{
+  /* background-color: #65C18C; */
+    background: linear-gradient(
+      to right,
+      #00FFAB,#65C18C,#14C38E
+    );
+}
+.text-kpi {
+    color: #ffffff !important;
+  font-size: 16px !important;
+}
+.calendar-container {
+  display: none; /* Hide initially */
+}
+.amcharts-chart-div a[href*="amcharts.com"] {
+  display: none !important;
+}
+
+/* .modal {
+  display: none; 
+  position: fixed;
+  z-index: 1000; 
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%; 
+  overflow: auto;
+  background-color: rgb(0,0,0); 
+  background-color: rgba(0,0,0,0.4); 
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto; 
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+.highlight {
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); 
+  border: 2px solid #FFD700; 
+}
+ */
+ input[type="date"] {
+  cursor: default; /* Changes cursor to default */
+}
+
+input[type="date"]:hover {
+  background-color: transparent; /* Remove hover background effect */
+}
+/* .popup_box{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 5px;
+} */
+.popup_box i{
+  font-size: 60px;
+  color: #eb9447;
+  border: 5px solid #eb9447;
+  padding: 20px 40px;
+  border-radius: 50%;
+  margin: -10px 0 20px 0;
+}
+.popup_box h1{
+  font-size: 20px;
+  font-weight: bold;
+  color: #1b2631;
+  margin-bottom: 5px;
+}
+.popup_box label{
+  font-size: 23px;
+  color: #404040;
+}
+.sav_b_chart {
+  display: none; /* Hides the bar chart initially */
+}
+.aqiSeparate{
+  display: none;
+}
+.aqiChart{
+  width: 50%;
+}

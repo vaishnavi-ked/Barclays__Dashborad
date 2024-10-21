@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donut Charts</title>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .chart-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 60%;
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .chart {
+            width: 45%;
+            text-align: center;
+        }
+
+        .apexcharts-datalabel-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .apexcharts-datalabel-label {
+            font-size: 16px;
+            color: #bbb;
+        }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <div class="chart" id="completionRateChart"></div>
+        <div class="chart" id="bounceRateChart"></div>
+    </div>
+
+    <script>
+        // Completion Rate Chart
+        var optionsCompletion = {
+            chart: {
+                type: 'donut',
+                height: 300
+            },
+            series: [68],
+            labels: ['Completion rate'],
+            colors: ['#00a65a', '#ddd'],
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '75%'
+                    }
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function (val) {
+                    return Math.round(val) + "%";
+                },
+                style: {
+                    fontSize: '24px',
+                    fontWeight: 'bold'
+                }
+            }
+        };
+
+        var chartCompletion = new ApexCharts(document.querySelector("#completionRateChart"), optionsCompletion);
+        chartCompletion.render();
+
+        // Bounce Rate Chart
+        var optionsBounce = {
+            chart: {
+                type: 'donut',
+                height: 300
+            },
+            series: [83],
+            labels: ['Bounce rate'],
+            colors: ['#dd4b39', '#ddd'],
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '75%'
+                    }
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function (val) {
+                    return Math.round(val) + "%";
+                },
+                style: {
+                    fontSize: '24px',
+                    fontWeight: 'bold'
+                }
+            }
+        };
+
+        var chartBounce = new ApexCharts(document.querySelector("#bounceRateChart"), optionsBounce);
+        chartBounce.render();
+    </script>
+</body>
+</html>
