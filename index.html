@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Barclays Dashboard</title>
     <link rel="stylesheet" href="public/css/custom-style.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="public/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <!--<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">-->
 
-    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/cupertino/jquery-ui.css">
+    <link rel="stylesheet" href="public/vendor/jquery/css/jquery-ui.min.css">
     <link
       href="public/vendor/fontawesome-free/css/all.min.css"
       rel="stylesheet"
@@ -16,14 +17,14 @@
     <link href="public/fonts/Poppins/stylesheet.css" rel="stylesheet" />
     <link rel="preconnect" href="https://fonts.gstatic.com" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      href="public/fonts/googleapis/googleapis.css"
       rel="stylesheet"
     />
 
     <!-- Custom styles for this template-->
     <link href="public/css/sb-admin-2.min.css" rel="stylesheet" />
     <link href="public/css/custome-white.css" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+    <link rel="stylesheet" href="public/vendor/chartist/css/chartist.min.css">
 </head>
 <body id="page-top" class="page-overview sidebar-toggled">
     <div id="wrapper">
@@ -43,6 +44,10 @@
             <!-- End of Topbar -->
             <!-- Begin Page Content -->
             <div class="container-fluid">
+              <!-- <div id="preloader" class="preloader">
+                <div class="loader"></div>
+            </div> -->
+        
               <!-- Modal -->
               <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
                 <div class="modal-dialog">
@@ -63,6 +68,15 @@
                   </div>
                 </div>
               </div>
+
+              <!-- <div class="row justify-content-center mb-4">
+                <div class="col-4 border text-center">
+                  <button class="btn">Daily</button>
+                  <button class="btn">Monthly</button>
+                  <button class="btn">Yearly</button>
+                  <button class="btn">Custom Range</button>
+                </div>
+            </div> -->
               <!-- Content Row -->
               <div class="row">
                 <div class="col-xl-12 col-lg-5 small-boxes">
@@ -168,6 +182,15 @@
                   <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                       <h6 class="m-0 font-weight-bold text-primary">CO2 Emission in Ton / User</h6> 
+                      <!-- <div class="dropdown">
+                        <button class="btn chart-btn border-0 text-primary" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                          &#x22EE; 
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                          <li><button class="dropdown-item" href="#"> Daily</button></li>
+                          <li><button class="dropdown-item" href="#">Hourly</button></li>
+                        </ul>
+                      </div>  -->
                     </div>
                       <div class="card-body">
                         <div class="chart-area">
@@ -321,9 +344,9 @@
                         <div id="chartdiv3"></div>
                       </div>
                       <div class="chart-area sav_b_chart">
-                        <div id="chartdiv9"></div>
+                        <div class="occupancyChart" id="chartdiv9"></div>
                       </div>
-                      <div class="mb-3">
+                      <div class="mb-3 occupacyBtn">
                         <div class="d-flex">
                           <div class="form-group mb-2 me-2" style="margin-right: 1rem;">
                             <label for="startDateOccupancy" class="me-2">Start Date:</label>
@@ -391,16 +414,16 @@
                           </div>
                       </div>
                       <div class="card-body">
-                          <div class="chart-area aqiAvg">
+                          <div class="chart-area aqiAvg mt-0">
                               <div id="chartdiv4" class="d-inline-block"></div>
                           </div>
-                          <div class="chart-area aqiSeparate">
-                              <div class="d-flex justify-content-between">
-                                <div class="aqiChart border" id="completionRateChart"></div>
-                              <div class="aqiChart border" id="bounceRateChart"></div>
+                          <div class="chart-area aqiSeparate mb-0">
+                              <div class="d-flex align-items-center justify-content-between">
+                                <div class="aqiChart " id="completionRateChart"></div>
+                                <div class="aqiChart" id="bounceRateChart"></div>
                               </div>
                           </div>
-                          <div class="mb-3">
+                          <div class="mb-3 aqiBtn">
                               <div class="d-flex">
                                   <div class="form-group mb-2 me-2" style="margin-right: 1rem;">
                                       <label for="startDateIAQ" class="me-2">Start Date:</label>
@@ -453,7 +476,7 @@
                       <div class="chart-area epiBar">
                           <div class="epiChart" id="epiBarChart"></div>
                       </div>
-                      <div class="mb-3">
+                      <div class="mb-3 epiBtn">
                         <div class="d-flex">
                           <div class="form-group mb-2 me-2" style="margin-right: 1rem;">
                             <label for="startDateEPI" class="me-2">Start Date:</label>
@@ -493,27 +516,43 @@
         <!-- End of Content Wrapper -->
       </div>
     
-      <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
-      <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
-      <script src="https://cdn.amcharts.com/lib/4/themes/dark.js"></script>
-      <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
-      <script src="https://cdn.amcharts.com/lib/4/plugins/rangeSelector.js"></script>
-      <script src="https://cdn.amcharts.com/lib/4/lang/es_ES.js"></script>
-      <script src="https://cdn.amcharts.com/lib/4/plugins/rangeSelector.js"></script>
-      <script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
-      <script src="https://www.amcharts.com/lib/3/serial.js"></script>
-      <script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
-      <script src="https://www.amcharts.com/lib/3/themes/black.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.38.0/apexcharts.min.js"></script>
-      <script src="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
-      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script> 
-      <script  src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-      <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+      <script src="public/vendor/amchart4/core.js"></script>
+      <script src="public/vendor/amchart4/chart.js"></script>
+      <script src="public/vendor/amchart4/themes/dark.js"></script>
+      <script src="public/vendor/amchart4/themes/animated.js"></script>
+      <script src="public/vendor/amchart4/lang/es_ES.js"></script>
+      <script src="public/vendor/amchart3/amcharts.js"></script>
+      <script src="public/vendor/amchart3/serial.js"></script>
+      <script src="public/vendor/amchart3/themes/light.js"></script>
+      <script src="public/vendor/amchart3/themes/dark.js"></script>
+      <!-- <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.38.0/apexcharts.min.js"></script> -->
+      <script src="public/vendor/apexchart/apexcharts.js"></script>
+      <script src="public/vendor/apexchart/apexChart.min1.js"></script>
+      <script src="public/vendor/chartist/chartist.min.js"></script>
+      <script src="public/vendor/jquery/jquery.slim.js"></script>
+      <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>  -->
+       <script src="public/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+      <script  src="public/vendor/jquery/jquery.min.js"></script>
+      <script src="public/vendor/jquery/jquery-ui.min.js"></script>
+      <script src="public/vendor/popper/popper.min.js"></script>
       <!-- CO2 Emission Donut Chart -->
       <script src="public/js/jquery.js"></script>
+      <!-- <script>
+        window.addEventListener('load', function () {
+            const preloader = document.getElementById('preloader');
+            const content = document.querySelector('.content');
+
+            // Add a fade-out class to the preloader
+            preloader.classList.add('fade-out');
+
+            // Wait for the fade-out animation to complete
+            setTimeout(() => {
+                preloader.style.display = 'none'; // Hide the preloader
+                content.style.display = 'block';   // Show the main content
+            }, 100000); // Adjust the timeout to match the CSS animation duration
+        });
+      </script> -->
       
     
 </body>

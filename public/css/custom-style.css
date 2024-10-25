@@ -117,3 +117,6 @@ input[type="date"]:hover {
 .aqiChart{
   width: 50%;
 }
+.epiBar{
+  display: none;
+}

@@ -45,10 +45,14 @@
     ) !important;
     background-size: cover;
   }
-  #chartdiv,#chartdiv1,#chartdiv3,#chartdiv2,#chartdiv4,#chartdiv5,#chartdiv6,#chartdiv7,#chartdiv9,#epiChart,
+  #chartdiv,#chartdiv1,#chartdiv3,#chartdiv2,#chartdiv4,#chartdiv5,#chartdiv6,#chartdiv7,
 #pue_chart {
   width: 100%;
   height: 300px;
+}
+#bounceRateChart,#completionRateChart,#epiBarChart,#chartdiv9 {
+  width: 100%;
+  height: 425px;
 }
 svg g[aria-label="Chart created using amCharts library"] {
   display: none;
@@ -106,4 +110,46 @@ svg g[aria-label="Chart created using amCharts library"] {
 }
 .chart-btn i {
   font-weight: normal; /* Set icon font weight to normal */
+}
+.btn:focus {
+  outline: none;
+  box-shadow: none; 
+}
+.btn:active {
+  outline: none;
+  box-shadow: none; 
+}
+.preloader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.loader {
+  border: 8px solid #f3f3f3; /* Light grey */
+  border-top: 8px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.content {
+  padding: 20px;
+}
+.fade-out {
+  opacity: 0;
+  transition: opacity 0.5s ease; /* Fade out effect */
 }
