@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
     <title>Barclays Dashboard</title>
     <link rel="stylesheet" href="public/css/custom-style.css">
     <link href="public/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
@@ -497,6 +498,37 @@
                   </div>
                 </div>
               </div>
+              <div class="row">
+                <!-- Occupancy Efficiency Chart -->
+                <div class="col-xl-12 col-lg-12">
+                  <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                      <h6 class="m-0 font-weight-bold text-primary">Occupancy Efficiency (%)</h6>
+                      <div id="button-sec">
+                        <button
+                          id="floor_sav_btn"
+                          title="Show Floor Wise"
+                          class="chart-button"
+                        >
+                          <i class="fas fa-fw fa-chart-bar"></i>
+                        </button>
+                        <button
+                          id="build_sav_btn"
+                          title="Show Current Building"
+                          class="chart-button"
+                        >
+                          <i class="fas fa-fw fa-tachometer-alt"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="card-body ">
+                      <div class="chart-area sav_g_chart">
+                        <div id="mychart1"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              
               
             </div>
             <!-- /.container-fluid -->
@@ -553,6 +585,94 @@
             }, 100000); // Adjust the timeout to match the CSS animation duration
         });
       </script> -->
+       <!-- <script>
+        // Define the scopes and their respective URLs
+        const scopes = [
+            { name: "Scope 1", url: "https://localhost/obix/histories/SqlServerDatabase/scope1/~historyQuery?start=2024-10-01T00:00:00.000+05:30&end=2024-10-31T00:00:00.000+05" },
+            { name: "Scope 2", url: "https://localhost/obix/histories/SqlServerDatabase/scope2/~historyQuery?start=2024-10-01T00:00:00.000+05:30&end=2024-10-31T00:00:00.000+05" },
+            { name: "Scope 3", url: "https://localhost/obix/histories/SqlServerDatabase/scope3/~historyQuery?start=2024-10-01T00:00:00.000+05:30&end=2024-10-31T00:00:00.000+05" },
+        ];
+
+        // Function to fetch data and parse XML
+       async function fetchScopeData(scope) {
+    try {
+        const response = await fetch(scope.url);
+        const text = await response.text();
+        console.log("Raw XML for", scope.name, ":", text);
+
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, "application/xml");
+
+        // Extract <real> elements and their "val" attributes
+        const values = Array.from(xml.querySelectorAll("real"))
+            .map(real => {
+                const val = real.getAttribute("val");
+                console.log(`Value for ${scope.name}:`, val);
+                return parseFloat(val);
+            });
+
+        // Handle any invalid or missing values
+        if (values.some(value => isNaN(value))) {
+            console.warn(`Non-numeric values detected for ${scope.name}`);
+        }
+
+        const total = values.reduce((sum, value) => sum + (isNaN(value) ? 0 : value), 0);
+        console.log(`Total for ${scope.name}:`, total);
+
+        return total;
+    } catch (error) {
+        console.error(`Error fetching data for ${scope.name}:`, error);
+        return 0; // Return 0 if there's an error
+    }
+}
+
+
+        // Function to render the chart
+        async function renderChart() {
+            const labels = [];
+            const data = [];
+
+            for (const scope of scopes) {
+                labels.push(scope.name);
+                const total = await fetchScopeData(scope);
+                data.push(total);
+            }
+
+            // Render the bar chart using ApexCharts
+            const options = {
+                chart: {
+                    type: 'bar',
+                    height: 350
+                },
+                series: [{
+                    name: 'Monthly Total',
+                    data: data
+                }],
+                xaxis: {
+                    categories: labels,
+                    title: {
+                        text: 'Scopes'
+                    }
+                },
+                yaxis: {
+                    title: {
+                        text: 'Total Value'
+                    }
+                },
+                title: {
+                    text: 'Monthly Scope Data',
+                    align: 'center'
+                },
+                colors: ['#008FFB', '#00E396', '#FEB019'],
+            };
+
+            const chart = new ApexCharts(document.querySelector("#mychart1"), options);
+            chart.render();
+        }
+
+        // Run the renderChart function on page load
+        renderChart();
+    </script> -->
       
     
 </body>
