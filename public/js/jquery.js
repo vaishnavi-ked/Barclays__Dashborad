@@ -1450,38 +1450,38 @@ $("#sav_yearly_water").on("click", async function () {
 let powerChart;
 
 async function lineChart3() {
-  const response = await fetch(url + "/obix/histories/Barclays/scope1/~historyQuery?start=2024-11-10&end=2024-11-11");
-    const text = await response.text();
+  // const response = await fetch(url + "/obix/histories/Barclays/scope1/~historyQuery?start=2024-11-10&end=2024-11-11");
+  //   const text = await response.text();
 
-    // Parse the XML data
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(text, "text/xml");
+  //   // Parse the XML data
+  //   const parser = new DOMParser();
+  //   const xmlDoc = parser.parseFromString(text, "text/xml");
 
-    // Get all <ref> elements (which include scope1, scope2, etc.)
-    const refs = xmlDoc.getElementsByTagName("ref");
+  //   // Get all <ref> elements (which include scope1, scope2, etc.)
+  //   const refs = xmlDoc.getElementsByTagName("ref");
 
-    // Initialize arrays to store scope names and values
-    let waterNames = [];
-    let waterValues = [];
+  //   // Initialize arrays to store scope names and values
+  //   let waterNames = [];
+  //   let waterValues = [];
 
-    // Iterate through the <ref> elements to extract scope names and their display values
-    for (let i = 0; i < refs.length; i++) {
-        const ref = refs[i];
+  //   // Iterate through the <ref> elements to extract scope names and their display values
+  //   for (let i = 0; i < refs.length; i++) {
+  //       const ref = refs[i];
         
-        const displayName = ref.getAttribute("name");
+  //       const displayName = ref.getAttribute("name");
 
-        // If display value contains a valid number, extract it
-        if (displayName == "Total_DOMESTIC_Use" || displayName == "Total_FLUSHING_Use") {
-            const valueText = ref.getAttribute("display");
-            const valueMatch = valueText && valueText.match(/(^\d+(\.\d+)?)/); // Match numeric value
-            if (valueMatch) {
-                const value = parseFloat(valueMatch[0]); // Parse the numeric value
-                waterNames.push(displayName); // Add the display name to the list
-                waterValues.push(value); // Add the value to the list
-            }
-        }
-    }
-    // Dispose of existing chart if it exists
+  //       // If display value contains a valid number, extract it
+  //       if (displayName == "Total_DOMESTIC_Use" || displayName == "Total_FLUSHING_Use") {
+  //           const valueText = ref.getAttribute("display");
+  //           const valueMatch = valueText && valueText.match(/(^\d+(\.\d+)?)/); // Match numeric value
+  //           if (valueMatch) {
+  //               const value = parseFloat(valueMatch[0]); // Parse the numeric value
+  //               waterNames.push(displayName); // Add the display name to the list
+  //               waterValues.push(value); // Add the value to the list
+  //           }
+  //       }
+  //   }
+  //   // Dispose of existing chart if it exists
     if (powerChart) {
         if (powerChart instanceof ApexCharts) {
             console.log("Chart destroyed");
@@ -1495,71 +1495,203 @@ async function lineChart3() {
         }
     }
 
-    am4core.ready(function () {
-        // Themes begin
-        am4core.useTheme(am4themes_animated);
-        // Themes end
+  //   am4core.ready(function () {
+  //       // Themes begin
+  //       am4core.useTheme(am4themes_animated);
+  //       // Themes end
 
-        // Create chart instance
-        powerChart = am4core.create("chartdiv2", am4charts.XYChart);
+  //       // Create chart instance
+  //       powerChart = am4core.create("chartdiv2", am4charts.XYChart);
 
-        // Add data (use getRandomData for dynamic values and getLast12Months for x-axis categories)
-        const months = getLast12Months(); // Get the last 12 months
-        const randomData = getRandomData(); // Generate random data for each month
+  //       // Add data (use getRandomData for dynamic values and getLast12Months for x-axis categories)
+  //       const months = getLast12Months(); // Get the last 12 months
+  //       const randomData = getRandomData(); // Generate random data for each month
 
-        // Prepare data array based on generated months and data
-        powerChart.data = months.map((month, index) => ({
-            "month": month, // Month name
-            "value": randomData[index] // Corresponding random value
-        }));
+  //       // Prepare data array based on generated months and data
+  //       powerChart.data = months.map((month, index) => ({
+  //           "month": month, // Month name
+  //           "value": randomData[index] // Corresponding random value
+  //       }));
 
-        // Create axes
-        var categoryAxis = powerChart.xAxes.push(new am4charts.CategoryAxis());
-        categoryAxis.dataFields.category = "month";
-        categoryAxis.renderer.labels.template.fill = am4core.color("#000000"); // Set x-axis labels color
-        categoryAxis.title.fill = am4core.color("#000000"); // Set x-axis title color
-        categoryAxis.renderer.labels.template.rotation = 315; // Set rotation
-        categoryAxis.renderer.labels.template.horizontalCenter = "right"; // Align to the right
-        categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center vertically
-        categoryAxis.renderer.minGridDistance = 1; // Ensure all categories are displayed
-        categoryAxis.renderer.labels.template.dy = -15;
-        categoryAxis.renderer.labels.template.fontSize = 10;
-        categoryAxis.renderer.labels.template.dx = 10;
+  //       // Create axes
+  //       var categoryAxis = powerChart.xAxes.push(new am4charts.CategoryAxis());
+  //       categoryAxis.dataFields.category = "month";
+  //       categoryAxis.renderer.labels.template.fill = am4core.color("#000000"); // Set x-axis labels color
+  //       categoryAxis.title.fill = am4core.color("#000000"); // Set x-axis title color
+  //       categoryAxis.renderer.labels.template.rotation = 315; // Set rotation
+  //       categoryAxis.renderer.labels.template.horizontalCenter = "right"; // Align to the right
+  //       categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center vertically
+  //       categoryAxis.renderer.minGridDistance = 1; // Ensure all categories are displayed
+  //       categoryAxis.renderer.labels.template.dy = -15;
+  //       categoryAxis.renderer.labels.template.fontSize = 10;
+  //       categoryAxis.renderer.labels.template.dx = 10;
 
-        var valueAxis = powerChart.yAxes.push(new am4charts.ValueAxis());
-        valueAxis.renderer.labels.template.fill = am4core.color("#000000"); // Set y-axis labels color
-        valueAxis.title.fill = am4core.color("#000000"); // Set y-axis title color
+  //       var valueAxis = powerChart.yAxes.push(new am4charts.ValueAxis());
+  //       valueAxis.renderer.labels.template.fill = am4core.color("#000000"); // Set y-axis labels color
+  //       valueAxis.title.fill = am4core.color("#000000"); // Set y-axis title color
 
-        // Create series
-        var lineSeries = powerChart.series.push(new am4charts.LineSeries());
-        lineSeries.dataFields.valueY = "value";
-        lineSeries.dataFields.categoryX = "month";
-        lineSeries.strokeWidth = 2;
-        lineSeries.stroke = am4core.color("#14C38E");
+  //       // Create series
+  //       var lineSeries = powerChart.series.push(new am4charts.LineSeries());
+  //       lineSeries.dataFields.valueY = "value";
+  //       lineSeries.dataFields.categoryX = "month";
+  //       lineSeries.strokeWidth = 2;
+  //       lineSeries.stroke = am4core.color("#14C38E");
 
-        // Add circle bullet
-        var bullet = lineSeries.bullets.push(new am4charts.CircleBullet());
-        bullet.circle.radius = 3; // Size of the bullet point
-        bullet.circle.strokeWidth = 0.5;
-        bullet.circle.fill = am4core.color("#fc030b"); // Bullet fill color
-        bullet.circle.stroke = am4core.color("#14C38E"); // Bullet stroke color
+  //       // Add circle bullet
+  //       var bullet = lineSeries.bullets.push(new am4charts.CircleBullet());
+  //       bullet.circle.radius = 3; // Size of the bullet point
+  //       bullet.circle.strokeWidth = 0.5;
+  //       bullet.circle.fill = am4core.color("#fc030b"); // Bullet fill color
+  //       bullet.circle.stroke = am4core.color("#14C38E"); // Bullet stroke color
 
-        // Set the bullet's color to match the line's color
-        bullet.adapter.add("fill", function (fill, target) {
-            return target.stroke;
-        });
+  //       // Set the bullet's color to match the line's color
+  //       bullet.adapter.add("fill", function (fill, target) {
+  //           return target.stroke;
+  //       });
 
-        // Configure cursor
-        var cursor = new am4charts.XYCursor();
-        lineSeries.tooltipText = "{categoryX}: [bold]{valueY}[/]";
-        lineSeries.tooltip.getFillFromObject = false; // Disable tooltip fill from series
-        lineSeries.tooltip.background.fill = am4core.color("#14C38E"); // Set tooltip background color
-        lineSeries.tooltip.label.fill = am4core.color("#ffffff"); // Set tooltip label color
-        lineSeries.tooltip.pointerOrientation = "horizontal"; // Set tooltip orientation
+  //       // Configure cursor
+  //       var cursor = new am4charts.XYCursor();
+  //       lineSeries.tooltipText = "{categoryX}: [bold]{valueY}[/]";
+  //       lineSeries.tooltip.getFillFromObject = false; // Disable tooltip fill from series
+  //       lineSeries.tooltip.background.fill = am4core.color("#14C38E"); // Set tooltip background color
+  //       lineSeries.tooltip.label.fill = am4core.color("#ffffff"); // Set tooltip label color
+  //       lineSeries.tooltip.pointerOrientation = "horizontal"; // Set tooltip orientation
 
-        powerChart.cursor = cursor; // Assign cursor to chart
-        powerChart.logo.disabled = true;
-    }); // end am4core.ready()
+  //       powerChart.cursor = cursor; // Assign cursor to chart
+  //       powerChart.logo.disabled = true;
+  //   }); // end am4core.ready()
+  
+am4core.ready(async function () {
+    // Themes begin
+    am4core.useTheme(am4themes_animated);
+    // Themes end
+
+    // Create chart instance
+    var powerChart = am4core.create("chartdiv2", am4charts.XYChart);
+
+    // Fetch month names for last 12 months using the getLast12Months() function
+    const last12Months = getLast12Months1(); // Assuming this returns an array with month data for the URLs
+    console.log("Last 12 Months (from getLast12Months1):", last12Months);
+
+    // Define the URLs for each month
+    const urls = last12Months.map(month => {
+        return `https://localhost/obix/histories/SqlServerDatabase/MonthlyHistory2324/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&limit=1`;
+    });
+   // console.log("URLs to fetch data from:", urls);  // Log the generated URLs
+
+    // Create an array to hold the chart data
+    const chartData = [];
+
+    // Loop through the URLs asynchronously using a for loop
+    for (const [index, scopeUrl] of urls.entries()) {
+        try {
+            // Fetch data using async/await
+            const response = await fetch(scopeUrl);
+            const text = await response.text(); // Get the response as text
+            const parser = new DOMParser();
+            const xml = parser.parseFromString(text, "application/xml");
+
+            // Debugging: Log the entire XML structure to check if it's as expected
+            console.log("Parsed XML Document:", xml);
+
+            // Extract all 'obj' elements from the XML
+            const records = xml.getElementsByTagName("obj");
+            console.log("XML Records:", records);  // Log the records to check if they're found
+
+            // Process each record and adjust the month
+            for (let i = 0; i < records.length; i++) {
+                const timestamp = records[i].getElementsByTagName("abstime")[0]?.getAttribute("val");
+                const value = records[i].getElementsByTagName("real")[0]?.getAttribute("val");
+
+                // Log to check the extracted timestamp and value
+                console.log("Timestamp:", timestamp, "Value:", value);
+                
+                const date = new Date(timestamp);  // '2024-10-01T00:00:00.000+05:30'
+ let month = date.setMonth(date.getMonth() - 1);
+ console.log("month number get " + month);
+            console.log("Month no " + month);
+            const months = date.toLocaleString('default', { month: 'long' });
+            console.log("string no " + months);
+            const year = date.getFullYear();
+            
+const formattedMonth = `${months} ${year}`;
+console.log("Formatted Month and Year:", formattedMonth);
+
+                // If there is no timestamp or value, skip to next record
+                if (!timestamp || !value) continue;
+
+                // Log the corresponding month name from getLast12Months()
+                //console.log("Month name from monthNames:", monthNames[month]);
+
+                // Push data to chartData
+                chartData.push({
+                     month: formattedMonth,  // Use the correct month name from monthNames array
+                    value: parseFloat(value)   // Convert value to a float for proper numeric handling
+                });
+            }
+
+            // Debugging: Log chart data after processing
+            console.log("Chart Data:", chartData);
+
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
+    }
+
+    // Update chart data
+    powerChart.data = chartData;
+
+    // Create category axis (X-axis) for months
+    var categoryAxis = powerChart.xAxes.push(new am4charts.CategoryAxis());
+    categoryAxis.dataFields.category = "month"; // Bind X-axis to month
+    categoryAxis.renderer.labels.template.fill = am4core.color("#000000"); // Set x-axis labels color
+    categoryAxis.title.fill = am4core.color("#000000"); // Set x-axis title color
+    categoryAxis.renderer.labels.template.rotation = 315; // Set rotation for better display
+    categoryAxis.renderer.labels.template.horizontalCenter = "right"; // Align to the right
+    categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center vertically
+    categoryAxis.renderer.minGridDistance = 1; // Ensure all categories are displayed
+    categoryAxis.renderer.labels.template.dy = -15;
+    categoryAxis.renderer.labels.template.fontSize = 10;
+    categoryAxis.renderer.labels.template.dx = 10;
+
+    // Create value axis (Y-axis) for data values
+    var valueAxis = powerChart.yAxes.push(new am4charts.ValueAxis());
+    valueAxis.renderer.labels.template.fill = am4core.color("#000000"); // Set y-axis labels color
+    valueAxis.title.fill = am4core.color("#000000"); // Set y-axis title color
+
+    // Create series (line) to represent the data
+    var lineSeries = powerChart.series.push(new am4charts.LineSeries());
+    lineSeries.dataFields.valueY = "value"; // Bind Y-axis to data values
+    lineSeries.dataFields.categoryX = "month"; // Bind X-axis to months
+    lineSeries.strokeWidth = 2;
+    lineSeries.stroke = am4core.color("#14C38E");
+
+    // Add circle bullet
+    var bullet = lineSeries.bullets.push(new am4charts.CircleBullet());
+    bullet.circle.radius = 3; // Size of the bullet point
+    bullet.circle.strokeWidth = 0.5;
+    bullet.circle.fill = am4core.color("#fc030b"); // Bullet fill color
+    bullet.circle.stroke = am4core.color("#14C38E"); // Bullet stroke color
+
+    // Set the bullet's color to match the line's color
+    bullet.adapter.add("fill", function (fill, target) {
+        return target.stroke;
+    });
+
+    // Configure cursor for interaction
+    var cursor = new am4charts.XYCursor();
+    lineSeries.tooltipText = "{categoryX}: [bold]{valueY}[/]"; // Tooltip text
+    lineSeries.tooltip.getFillFromObject = false; // Disable tooltip fill from series
+    lineSeries.tooltip.background.fill = am4core.color("#14C38E"); // Set tooltip background color
+    lineSeries.tooltip.label.fill = am4core.color("#ffffff"); // Set tooltip label color
+    lineSeries.tooltip.pointerOrientation = "horizontal"; // Set tooltip orientation
+
+    powerChart.cursor = cursor; // Assign cursor to chart
+    powerChart.logo.disabled = true;
+});
+
+
+
 }
 
 async function lineChart4() {
@@ -4759,17 +4891,33 @@ function getLast12Months1() {
         const months = [];
         const now = new Date();
 
-        for (let i = 12; i > 0; i--) {
+        for (let i = 11; i >= 0; i--) {
             const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth() - i, 1);
             const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
             months.push({
                 startDate: `${firstDayOfMonth.getFullYear()}-${String(firstDayOfMonth.getMonth() + 1).padStart(2, '0')}-${String(firstDayOfMonth.getDate()).padStart(2, '0')}`,
-                endDate: `${lastDayOfMonth.getFullYear()}-${String(lastDayOfMonth.getMonth() + 1).padStart(2, '0')}-${String(lastDayOfMonth.getDate()).padStart(2, '0')}`
+                //endDate: `${lastDayOfMonth.getFullYear()}-${String(lastDayOfMonth.getMonth() + 1).padStart(2, '0')}-${String(lastDayOfMonth.getDate()).padStart(2, '0')}`
             });
         }
 
         return months;
     }
+// function getLast12Months1() {
+//     const months = [];
+//     const now = new Date();
+
+//     for (let i = 0; i <= 12; i++) {
+//         // Calculate the first day of the month for the current iteration
+//         const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        
+//         // Push the formatted first day of the month (YYYY-MM-DD)
+//         months.push({
+//             startDate: `${firstDayOfMonth.getFullYear()}-${String(firstDayOfMonth.getMonth() + 1).padStart(2, '0')}-${String(firstDayOfMonth.getDate()).padStart(2, '0')}`
+//         });
+//     }
+
+//     return months;
+// }
 // Example function to generate random data for each scope
 function getRandomData() {
     return Array.from({ length: 12 }, () => Math.floor(Math.random() * 100) + 20); // Random data for 12 months
