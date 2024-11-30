@@ -2,28 +2,27 @@ jQuery(function () {
 
     let url = "https://localhost";
     let currentDate = new Date();
-    currentDate.setDate(currentDate.getDate() - 1);
+    console.log("current day " + currentDate);
+    currentdate = currentDate.setDate(currentDate.getDate() - 1);
+    console.log("- 1" + currentDate);
     let previousDate = currentDate.toISOString().split('T')[0];
     console.log("previos day " + previousDate);
+    let intervalId; // Variable to store the interval ID
+    
+  //  intervalId=setInterval(pieChart, 5000);
 
     let emissionChart;
 
-  async function pieChart() {
+
+    async function pieChart() {
         // Only dispose the existing chart if it exists
         if (emissionChart) {
             if (emissionChart instanceof ApexCharts) {
-                console.log("ApexCharts Pie chart destroyed");
                 emissionChart.destroy(); // Dispose the existing ApexCharts instance
-            } else if (emissionChart instanceof AmCharts.AmChart) {
-                console.log("AmCharts Pie chart destroyed");
-                emissionChart.clear(); // Clear the existing AmCharts instance
-            } else if (emissionChart instanceof am4charts.XYChart) {
-                console.log("am4charts Pie chart destroyed");
-                emissionChart.dispose(); // Dispose the existing am4charts instance
             }
             clearDateInputs();
         }
-
+    
         // Append a style block to customize the text appearance in the chart
         const style = document.createElement('style');
         style.innerHTML = `
@@ -33,155 +32,139 @@ jQuery(function () {
             }
         `;
         document.head.appendChild(style);
+        // Initialize scopeValues as an empty array
+let scopeValues = [];
+const scopes = ['scope1date', 'scope2date', 'scope3date'];
+ 
+// Fetch data for each scope
+for (let scope of scopes) {
+    const response = await fetch(`${url}/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${previousDate}T00:00:00.000+05:30&limit=1`);
+    console.log("response for scope " + scope, response);
+    const text = await response.text();
 
-        // Fetch XML data from the server
-        const response = await fetch(url + "/obix/config/Barclays/Co2$20Emission$20in$20Ton/");
-        const text = await response.text();
+    // Parse the XML data
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(text, "text/xml");
 
-        // Parse the XML data
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(text, "text/xml");
+    // Get all <obj> elements
+    const objs = xmlDoc.getElementsByTagName("list");
+    console.log("length " + objs.length);
+    // Process each <obj> element
+    for (let i = 0; i < objs.length; i++) {
+        const obj = objs[i];
+        const real = obj.getElementsByTagName("real")[0]; // Get the <real> tag
 
-        // Get all <ref> elements (which include scope1, scope2, etc.)
-        const refs = xmlDoc.getElementsByTagName("ref");
+        if (real) {
+            const valueText = real.getAttribute("val"); // Get the value of the <real> tag
+            console.log("value text " + valueText);
 
-        // Initialize arrays to store scope names and values
-        let scopeNames = [];
-        let scopeValues = [];
+            if (valueText) {
+                const value = parseFloat(valueText).toFixed(2); // Format to 2 decimal places
 
-        // Iterate through the <ref> elements to extract scope names and their display values
-        for (let i = 0; i < refs.length; i++) {
-            const ref = refs[i];
-            
-            const displayName = ref.getAttribute("name");
-            const valueText = ref.getAttribute("display");
-
-            // If display value contains a valid number, extract it
-            const valueMatch = valueText && valueText.match(/(^\d+(\.\d+)?)/); // Match numeric value
-            if (valueMatch) {
-                const value = parseFloat(valueMatch[0]); // Parse the numeric value
-                scopeNames.push(displayName); // Add the display name to the list
-                scopeValues.push(value); // Add the value to the list
+                // Add the value for the scope
+                scopeValues.push(parseFloat(value)); // Directly push the value without object key
             }
         }
+    }
+}
 
-        // Calculate the total value
-        const totalValue = scopeValues.reduce((sum, value) => sum + value, 0);
+// Calculate the total value
+const totalValue = scopeValues.reduce((sum, value) => sum + value, 0); // Sum the values for each scope
 
-        // Radial bar chart options
-        var options = {
-            series: scopeValues, // Use the calculated series values
-            chart: {
-                height: '100%',
-                type: 'radialBar', // Set chart type to radialBar
+// Radial bar chart options
+var options = {
+    series: scopeValues, // Use the array of values directly
+    chart: {
+        height: '100%',
+        type: 'radialBar', // Set chart type to radialBar
+    },
+    plotOptions: {
+        radialBar: {
+            offsetY: 30,
+            offsetX: -10,
+            startAngle: -180, // Define starting angle
+            endAngle: 90, // Define ending angle
+            track: {
+                background: '#f5f5f5', // Track background color
+                strokeWidth: '100%',
+                margin: 4, // Margin between tracks
             },
-            plotOptions: {
-                radialBar: {
-                    offsetY: 30,
-                    offsetX: -10,
-                    startAngle: -180, // Define starting angle
-                    endAngle: 90, // Define ending angle
-                    track: {
-                        background: '#f5f5f5', // Track background color
-                        strokeWidth: '100%',
-                        margin: 4, // Margin between tracks
-                    },
-                    hollow: {
-                        margin: 0,
-                        size: '50%', // Hollow size
-                        background: 'transparent',
-                    },
-                    dataLabels: {
-                        show: true,
-                        name: {
-                            show: true,
-                            fontSize: '30px',
-                            fontWeight: 'bold',
-                            color: '#000000',
-                            formatter: function () {
-                                return 'Total'; // Static 'Total' label in the center
-                            }
-                        },
-                        value: {
-                            show: true,
-                            fontSize: '30px',
-                            fontWeight: 'bold',
-                            color: '#000000',
-                            formatter: function () {
-                                return totalValue; // Display static total value in the center
-                            }
-                        },
-                        total: {
-                            show: true,
-                            label: 'Total',
-                            fontSize: '30px',
-                            fontWeight: 'bold',
-                            color: '#000000',
-                            formatter: function () {
-                                return totalValue; // Static total value
-                            }
-                        }
+            hollow: {
+                margin: 0,
+                size: '50%', // Hollow size
+                background: 'transparent',
+            },
+            dataLabels: {
+                show: true,
+                name: {
+                    show: true,
+                    fontSize: '30px',
+                    fontWeight: 'bold',
+                    color: '#000000',
+                    formatter: function () {
+                        return 'Total'; // Static 'Total' label in the center
+                    }
+                },
+                value: {
+                    show: true,
+                    fontSize: '30px',
+                    fontWeight: 'bold',
+                    color: '#000000',
+                    formatter: function () {
+                        return totalValue; // Display static total value in the center
+                    }
+                },
+                total: {
+                    show: true,
+                    label: 'Total',
+                    fontSize: '30px',
+                    fontWeight: 'bold',
+                    color: '#000000',
+                    formatter: function () {
+                        return totalValue; // Static total value
                     }
                 }
-            },
-            colors: ["#FFB22C", "#A4CE95", "#FFD93D"], // Segment colors
-            fill: { opacity: [0.85, 0.85, 0.85] }, // Set opacity for each segment
-            labels: scopeNames, // Labels for each segment
-            legend: {
-                show: true,
-                floating: true,
-                fontSize: '16px',
-                position: 'right', // Position legend on the right
-                offsetX: 10,
-                offsetY: -20,
-                labels: { useSeriesColors: true }, // Use colors from the series
-                markers: { size: 0 }, // No markers in the legend
-                // formatter: function(seriesName, opts) {
-                //     return seriesName + ": " + opts.w.globals.series[opts.seriesIndex] + "%"; // Custom legend formatting
-                // },
-                itemMargin: { vertical: 1 }, // Margin between legend items
-            },
-            tooltip: {
-                enabled: true,
-                shared: false, // Disable shared tooltip
-                style: {
-                    fontSize: '16px', // Optional: set font size for the tooltip text
-                },
-                custom: function ({ series, seriesIndex, w }) {
-                    const name = w.globals.labels[seriesIndex]; // Get the label
-                    const value = series[seriesIndex]; // Get the value
+            }
+        }
+    },
+    colors: ["#FFB22C", "#A4CE95", "#FFD93D"], // Segment colors
+    labels: ["Scope 1", "Scope 2", "Scope 3"], // Labels for each segment
+    legend: {
+        show: true,
+        floating: true,
+        fontSize: '16px',
+        position: 'right', // Position legend on the right
+        offsetX: 10,
+        offsetY: -20,
+        labels: { useSeriesColors: true }, // Use colors from the series
+        markers: { size: 0 }, // No markers in the legend
+    },
+    tooltip: {
+        enabled: true,
+        shared: false, // Disable shared tooltip
+        custom: function ({ series, seriesIndex, w }) {
+            const name = w.globals.labels[seriesIndex]; // Get the label
+            const value = series[seriesIndex]; // Get the value
 
-                    // Define background colors for each series
-                    const backgroundColors = [
-                        '#FFB22C', // Color for Series 1
-                        '#A4CE95', // Color for Series 2
-                        '#FFD93D'  // Color for Series 3 (if applicable)
-                    ];
+            return `<div style="color: #00000; background: ${w.globals.colors[seriesIndex]}; padding: 8px; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+                        <strong style="color: #000000;">${name}</strong>: <span style="color: #000000;">${value}</span>
+                    </div>`;
+        },
+    },
+    responsive: [{
+        breakpoint: 480,
+        options: { legend: { show: true } } // Show legend on small screens
+    }]
+};
 
-                    // Get the background color based on the series index
-                    const backgroundColor = backgroundColors[seriesIndex] || '#F7F7F7'; // Default color if index is out of bounds
+// Create and render the new radial bar chart
+emissionChart = new ApexCharts(document.querySelector("#chartdiv"), options);
+emissionChart.render();
 
-                    return `<div style="color: #00000; background: ${backgroundColor}; padding: 8px; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
-                                <strong style="color: #000000;">${name}</strong>: <span style="color: #000000;">${value}</span>
-                            </div>`; // Show name and value in tooltip
-                },
-            },
-            responsive: [{
-                breakpoint: 480,
-                options: { legend: { show: true } } // Show legend on small screens
-            }]
-        };
-
-        // Create and render the new radial bar chart
-        emissionChart = new ApexCharts(document.querySelector("#chartdiv"), options);
-        emissionChart.render();
     }
 
     pieChart();
-      let intervalId; // Variable to store the interval ID
-    
-    intervalId=setInterval(pieChart, 5000);
-    
+  
     async function lineChartMonthlyCo25() {
         // Get the current date
         const today = new Date();
@@ -195,14 +178,14 @@ jQuery(function () {
         const endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
         
         // Define the scopes
-        const scopes = ['scope1', 'scope2', 'scope3'];
+        const scopes = ['scope1date', 'scope2date', 'scope3date'];
         
         let scopeValues = [];
 
         // Fetch data for each scope
         for (let scope of scopes) {
-            const response = await fetch(url + `/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${startISO}&end=${endISO}`);
-            console.log("response " + response);
+            const response = await fetch(`${url}/obix/histories/SqlServerDatabase/${scope}~historyQuery?start=${startISO}&end=${endISO}`);
+            console.log("response month " + response);
             const text = await response.text();
 
             // Parse the XML data
@@ -213,14 +196,18 @@ jQuery(function () {
             const objs = xmlDoc.getElementsByTagName("obj");
 
             // Process each <obj> element
-            for (let i = 0; i < objs.length; i++) {
+            for (let i = 0; i < objs.length-1; i++) {
                 const obj = objs[i];
                 const abstime = obj.getElementsByTagName("abstime")[0];
+                console.log("abstime " + abstime);
                 const real = obj.getElementsByTagName("real")[0];
+                console.log("real " + real);
 
                 if (abstime && real) {
                     const dateText = abstime.getAttribute("val");
+                    console.log("date text " + dateText);
                     const valueText = real.getAttribute("val");
+                    console.log("value text " + valueText);
 
                     if (valueText && dateText) {
                         const value = parseFloat(valueText).toFixed(2); // Format to 2 decimal places
@@ -544,55 +531,48 @@ async function createBarChart1() {
             clearDateInputs();
         }
         
-    // Helper function to get the last 12 months' start and end dates
-    
-
-    // Fetch the data for each scope
-    async function fetchScopeData(scopeUrl) {
-        try {
-            const response = await fetch(scopeUrl);
-            const text = await response.text();
-            const parser = new DOMParser();
-            const xml = parser.parseFromString(text, "application/xml");
-
-            const values = Array.from(xml.querySelectorAll("real"))
-                .map(real => parseFloat(real.getAttribute("val"))).filter(val => !isNaN(val));
-                //console.log(values.reduce((sum, value) => sum + value,0));
-            
-            return values.reduce((sum, value) => sum + value, 0);
-        } catch (error) {
-            console.error("Error fetching data:", error);
-            return 0;
-        }
-    }
-
-    // Get last 12 months
-    const last12Months = getLast12Months1();
-
-    // Define the URLs for each scope
-    const urls = last12Months.map(month => {
-        return [
-            `https://localhost/obix/histories/SqlServerDatabase/scopes1/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&end=${month.endDate}T00:00:00.000+05:30`,
-            `https://localhost/obix/histories/SqlServerDatabase/scopes2/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&end=${month.endDate}T00:00:00.000+05:30`,
-            `https://localhost/obix/histories/SqlServerDatabase/scopes3/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&end=${month.endDate}T00:00:00.000+05:30`
-        ];
-    });
-
-    // Fetch data for each scope
-    try {
         const scope1Data = [];
         const scope2Data = [];
         const scope3Data = [];
         
-        for (let i = 0; i < urls.length; i++) {
-            const scope1Total = await fetchScopeData(urls[i][0]);
-            const scope2Total = await fetchScopeData(urls[i][1]);
-            const scope3Total = await fetchScopeData(urls[i][2]);
-            
-            scope1Data.push(scope1Total);
-            scope2Data.push(scope2Total);
-            scope3Data.push(scope3Total);
+        for (const month of last12Months) {
+            const scopeUrls = [
+                `${url}/obix/histories/SqlServerDatabase/scope1/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&limit=1`,
+                `${url}/obix/histories/SqlServerDatabase/scope2/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&limit=1`,
+                `${url}/obix/histories/SqlServerDatabase/scope3/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&limit=1`
+            ];
+        
+            for (let i = 0; i < scopeUrls.length; i++) {
+                try {
+                    const response = await fetch(scopeUrls[i]);
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const xml = parser.parseFromString(text, "application/xml");
+        
+                    const records = xml.getElementsByTagName("obj");
+                    for (let j = 0; j < records.length; j++) {
+                        const timestamp = records[j].getElementsByTagName("abstime")[0]?.getAttribute("val");
+                        const value = records[j].getElementsByTagName("real")[0]?.getAttribute("val");
+                        if (!timestamp || !value) continue;
+        
+                        const date = new Date(timestamp);
+                        const month = date.toLocaleString('default', { month: 'long' });
+                        const year = date.getFullYear();
+                        const formattedMonth = `${month} ${year}`;
+        
+                        // Push the data to the respective scope arrays
+                        if (i === 0) scope1Data.push(parseFloat(value));
+                        else if (i === 1) scope2Data.push(parseFloat(value));
+                        else if (i === 2) scope3Data.push(parseFloat(value));
+                    }
+                } catch (error) {
+                    console.error("Error fetching data for scope", i, ":", error);
+                }
+            }
         }
+        
+    // Fetch data for each scope
+    try {
 
         const chartOptions = {
             series: [{
@@ -661,30 +641,30 @@ async function createBarChart1() {
 
 
 
-function clearUpdateInterval() {
-    if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null; // Reset intervalId to prevent multiple intervals
-    }
-}
+// function clearUpdateInterval() {
+//     if (intervalId) {
+//         clearInterval(intervalId);
+//         intervalId = null; // Reset intervalId to prevent multiple intervals
+//     }
+// }
 
 // Function to start a new interval for updating data
 function startUpdateInterval(chartUpdateFunction) {
     clearUpdateInterval(); // Clear any existing interval before starting a new one
-    intervalId = setInterval(chartUpdateFunction, 5000); // Set interval to update data every 5 seconds
+    //intervalId = setInterval(chartUpdateFunction, 5000); // Set interval to update data every 5 seconds
 }
 
 // Event listeners to update data based on date range or chart type selection
 $("#startDate, #endDate").on("change", async function () {
-    clearDateInputsWater();
+   // clearDateInputsWater();
     await lineChart2(); // Load initial data for the selected date range
-    startUpdateInterval(lineChart2); // Set interval to keep updating line chart data
+   // startUpdateInterval(lineChart2); // Set interval to keep updating line chart data
 });
 
 $("#sav_monthly_btn").on("click", async function () {
     clearDateInputs();
     await lineChartMonthlyCo25(); // Load initial data for the monthly chart
-    startUpdateInterval(lineChartMonthlyCo25); // Start interval for monthly updates
+    //startUpdateInterval(lineChartMonthlyCo25); // Start interval for monthly updates
 });
 
 $("#sav_daily_btn").on("click", async function () {
@@ -696,7 +676,7 @@ $("#sav_daily_btn").on("click", async function () {
 $("#sav_yearly_btn").on("click", async function () {
     clearDateInputs();
     await createBarChart1(); // Load initial data for the yearly bar chart
-    startUpdateInterval(createBarChart1); // Start interval for yearly chart updates
+    //startUpdateInterval(createBarChart1); // Start interval for yearly chart updates
 });
 /* co2 emmision end */
 
@@ -705,7 +685,7 @@ $("#sav_yearly_btn").on("click", async function () {
 let chart = null; // Declare chart globally to keep track of it
 
 async function pieChart1() {
-    const response = await fetch(url + "/obix/config/Barclays/Water$20Consumption/");
+    const response = await fetch(url + "/obix/config/Barclays/Water$20Consumption/~historyQuery?start=" + previousDate + "T00:00:00.000+05:30");
     console.log("response " + response);
     const text = await response.text();
 
@@ -1144,187 +1124,45 @@ async function lineChart1() {
     }
 }
 
-// async function showClusteredBarChart1() {
-  
-//   async function fetchScopeData(scopeUrl) {
-//         try {
-//             const response = await fetch(scopeUrl);
-//             const text = await response.text();
-//             const parser = new DOMParser();
-//             const xml = parser.parseFromString(text, "application/xml");
-
-//             const values = Array.from(xml.querySelectorAll("real"))
-//                 .map(real => parseFloat(real.getAttribute("val"))).filter(val => !isNaN(val));
-//                 //console.log(values.reduce((sum, value) => sum + value,0));
-            
-//             return values.reduce((sum, value) => sum + value, 0);
-//         } catch (error) {
-//             console.error("Error fetching data:", error);
-//             return 0;
-//         }
-//     }
-
-//     // Get last 12 months
-//     const last12Months = getLast12Months1();
-
-//     // Define the URLs for each scope
-//     const urls = last12Months.map(month => {
-//         return [
-//             `https://localhost/obix/histories/SqlServerDatabase/scopes1/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&end=${month.endDate}T00:00:00.000+05:30`,
-//             `https://localhost/obix/histories/SqlServerDatabase/scopes2/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&end=${month.endDate}T00:00:00.000+05:30`
-//         ];
-//     });
-//     const scope1Data = [];
-//         const scope2Data = [];
-        
-//         for (let i = 0; i < urls.length; i++) {
-//             const scope1Total = await fetchScopeData(urls[i][0]);
-//             const scope2Total = await fetchScopeData(urls[i][1]);
-            
-//             scope1Data.push(scope1Total);
-//             scope2Data.push(scope2Total);
-//         }
-//     am4core.ready(function () {
-//         // Themes begin
-//         am4core.useTheme(am4themes_animated);
-//         // Themes end
-
-//         var chart = am4core.create('chartdiv1', am4charts.XYChart);
-
-//         chart.padding(0, 0, 0, 0);
-//         chart.colors.step = 2;
-
-//         chart.legend = new am4charts.Legend();
-//         chart.legend.position = 'top';
-//         chart.legend.paddingBottom = 20;
-//         chart.legend.labels.template.maxWidth = 95;
-//         chart.legend.labels.template.fill = am4core.color('#000000');
-
-//         var xAxis = chart.xAxes.push(new am4charts.CategoryAxis());
-//         xAxis.dataFields.category = 'category';
-//         xAxis.renderer.cellStartLocation = 0.2;
-//         xAxis.renderer.cellEndLocation = 0.8;
-//         xAxis.renderer.grid.template.location = 0;
-//         xAxis.renderer.labels.template.fill = am4core.color('#000000');
-//         xAxis.renderer.minGridDistance = 20;
-//         xAxis.renderer.labels.template.rotation = 315;
-//         xAxis.renderer.labels.template.horizontalCenter = "right"; // Align to right
-//         xAxis.renderer.labels.template.verticalCenter = "middle"; // Center vertically
-//         xAxis.renderer.labels.template.dy = -15;
-//         xAxis.renderer.labels.template.fontSize = 10;
-//         xAxis.renderer.labels.template.dx = 5;
-
-//         var yAxis = chart.yAxes.push(new am4charts.ValueAxis());
-//         yAxis.min = 0;
-//         yAxis.renderer.labels.template.fill = am4core.color('#000000');
-
-//         // Create stacked series
-//         function createSeries(value, name, color) {
-//             var series = chart.series.push(new am4charts.ColumnSeries());
-//             series.dataFields.valueY = value;
-//             series.dataFields.categoryX = "category";
-//             series.name = name;
-
-//             series.columns.template.fill = am4core.color(color);  // Fill color
-//             series.columns.template.stroke = am4core.color(color); // Stroke color
-
-//             // Customize tooltip
-//             series.tooltipText = '{name}: {valueY}';
-//             series.tooltip.background.fill = am4core.color(color); // Set tooltip background color to match series color
-//             series.tooltip.label.fill = am4core.color('#ffffff'); // Tooltip text color
-//             series.tooltip.pointerOrientation = 'vertical'; // Tooltip orientation
-//             series.tooltip.getFillFromObject = false; // Ensure tooltip color is set explicitly
-//             series.tooltip.getStrokeFromObject = false; // Ensure tooltip border color is set explicitly
-
-//             series.stacked = true;  // Enable stacking
-
-//             return series;
-//         }
-
-//         // Generate the last 12 months for the x-axis categories
-//         const last12Months = getLast12Months();
-
-//         // Generate random data for each scope
-//         const scope1Data = getRandomData(); // Random data for "Domestic Water"
-//         const scope2Data = getRandomData(); // Random data for "Flushing Water"
-
-//         // Set the chart data using last 12 months and generated data
-//         chart.data = last12Months.map((month, index) => ({
-//             category: month,
-//             first: scope1Data[index],
-//             second: scope2Data[index]
-//         }));
-
-//         createSeries('first', 'Domestic Water', '#C65BCF');
-//         createSeries('second', 'Flushing Water', '#39A7FF');
-
-//         // Add total value at the top of each bar for the last series only
-//         chart.events.on("datavalidated", function () {
-//             var lastSeries = chart.series.getIndex(chart.series.length - 1); // Get the last series in the stack
-//             lastSeries.columns.each(function (column) {
-//                 var total = 0;
-
-//                 // Loop through all stacked series to calculate the total
-//                 chart.series.each(function (stackedSeries) {
-//                     total += stackedSeries.dataItems.getIndex(column.dataItem.index).valueY;
-//                 });
-
-//                 // Add a label at the top of the stack (for the last series only)
-//                 var label = column.createChild(am4core.Label);
-//                 label.text = total.toString();
-//                 label.fill = am4core.color('#000000'); // Label color
-//                 label.fontSize = 12;
-//                 label.dy = -20; // Position above the bar
-//                 label.align = "center";
-//             });
-//         });
-
-//         var cursor = new am4charts.XYCursor();
-//         chart.cursor = cursor;
-//         chart.logo.disabled = true;
-//     }); // end am4core.ready()
-// }
-
 async function showClusteredBarChart1() {
-    async function fetchScopeData(scopeUrl) {
+    const domesticWater = [];
+const flushingwater = [];
+const last12Months = getLast12Months1(); 
+
+for (const month of last12Months) {
+    const scopeUrls = [
+        `${url}/obix/histories/SqlServerDatabase/domesticWater/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&limit=1`,
+        `${url}/obix/histories/SqlServerDatabase/flushingWater/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&limit=1`
+    ];
+
+    for (let i = 0; i < scopeUrls.length; i++) {
         try {
-            const response = await fetch(scopeUrl);
+            const response = await fetch(scopeUrls[i]);
             const text = await response.text();
             const parser = new DOMParser();
             const xml = parser.parseFromString(text, "application/xml");
 
-            const values = Array.from(xml.querySelectorAll("real"))
-                .map(real => parseFloat(real.getAttribute("val"))).filter(val => !isNaN(val));
+            const records = xml.getElementsByTagName("obj");
+            for (let j = 0; j < records.length; j++) {
+                const timestamp = records[j].getElementsByTagName("abstime")[0]?.getAttribute("val");
+                const value = records[j].getElementsByTagName("real")[0]?.getAttribute("val");
+                if (!timestamp || !value) continue;
 
-            return values.reduce((sum, value) => sum + value, 0);
+                const date = new Date(timestamp);
+                const month = date.toLocaleString('default', { month: 'long' });
+                const year = date.getFullYear();
+                const formattedMonth = `${month} ${year}`;
+
+                // Push the data to the respective scope arrays
+                if (i === 0) domesticWater.push(parseFloat(value));
+                else if (i === 1) flushingwater.push(parseFloat(value));
+            }
         } catch (error) {
-            console.error("Error fetching data:", error);
-            return 0;
+            console.error("Error fetching data for scope", i, ":", error);
         }
     }
+}
 
-    // Get last 12 months
-    const last12Months = getLast12Months1();
-
-    // Define the URLs for each scope
-    const urls = last12Months.map(month => {
-        return [
-            `https://localhost/obix/histories/SqlServerDatabase/scopes1/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&end=${month.endDate}T00:00:00.000+05:30`,
-            `https://localhost/obix/histories/SqlServerDatabase/scopes2/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&end=${month.endDate}T00:00:00.000+05:30`
-        ];
-    });
-
-    const scope1Data = [];
-    const scope2Data = [];
-
-    // Fetch data for each month
-    for (let i = 0; i < urls.length; i++) {
-        const scope1Total = await fetchScopeData(urls[i][0]);
-        const scope2Total = await fetchScopeData(urls[i][1]);
-
-        scope1Data.push(scope1Total);
-        scope2Data.push(scope2Total);
-    }
 
     am4core.ready(function () {
         // Themes begin
@@ -1450,37 +1288,6 @@ $("#sav_yearly_water").on("click", async function () {
 let powerChart;
 
 async function lineChart3() {
-  // const response = await fetch(url + "/obix/histories/Barclays/scope1/~historyQuery?start=2024-11-10&end=2024-11-11");
-  //   const text = await response.text();
-
-  //   // Parse the XML data
-  //   const parser = new DOMParser();
-  //   const xmlDoc = parser.parseFromString(text, "text/xml");
-
-  //   // Get all <ref> elements (which include scope1, scope2, etc.)
-  //   const refs = xmlDoc.getElementsByTagName("ref");
-
-  //   // Initialize arrays to store scope names and values
-  //   let waterNames = [];
-  //   let waterValues = [];
-
-  //   // Iterate through the <ref> elements to extract scope names and their display values
-  //   for (let i = 0; i < refs.length; i++) {
-  //       const ref = refs[i];
-        
-  //       const displayName = ref.getAttribute("name");
-
-  //       // If display value contains a valid number, extract it
-  //       if (displayName == "Total_DOMESTIC_Use" || displayName == "Total_FLUSHING_Use") {
-  //           const valueText = ref.getAttribute("display");
-  //           const valueMatch = valueText && valueText.match(/(^\d+(\.\d+)?)/); // Match numeric value
-  //           if (valueMatch) {
-  //               const value = parseFloat(valueMatch[0]); // Parse the numeric value
-  //               waterNames.push(displayName); // Add the display name to the list
-  //               waterValues.push(value); // Add the value to the list
-  //           }
-  //       }
-  //   }
   //   // Dispose of existing chart if it exists
     if (powerChart) {
         if (powerChart instanceof ApexCharts) {
@@ -1700,9 +1507,9 @@ async function lineChart4() {
 
 // Format the date (optional)
 let previousDate = currentDate.toISOString().split('T')[0];
-console.log("previos day " + previousDate);
+//console.log("previos day " + previousDate);
     const response = await fetch(url + "/obix/histories/Barclays/scope1/~historyQuery?start=" + previousDate + "T00:00:00.000+05:30");
-  console.log(response);
+  //console.log(response);
   const text = await response.text();
 
   // Parse the XML data
@@ -2182,21 +1989,7 @@ $("#sav_yearly_power").on("click", async function () {
 /* occupancy efficiency start */
 var occupancyChart = null;
 function removeChart(newChartFunction) {
-    if (occupancyChart) {
-        // var charts=[];
-        // for (var i = 0; i < charts.length; i++) {
-        //     if (charts[i] instanceof ApexCharts) {
-        //         console.log("Apex chart destroyed");
-        //         charts[i].destroy(); // Dispose the existing chart
-        //     }
-        //     else if(charts[i] instanceof AmCharts.AmChart){
-        //         occupancyChart.clear();
-        //     }
-        //     else if(charts[i] instanceof am4charts.XYChart){
-        //         occupancyChart.dispose();
-        //     }
-        // }
-      
+    if (occupancyChart) {     
         if (occupancyChart instanceof ApexCharts) {
             var charts = [];
             console.log("Pie chart destroyed");
@@ -2232,7 +2025,7 @@ async function donutChart() {
         // Get all <ref> elements (which include scope1, scope2, etc.)
         const outElement = xmlDoc.querySelector('real[name="out"]');
         const outValue = parseFloat(outElement.getAttribute('val'));
-        console.log("out Values" + outValue);
+        //console.log("out Values" + outValue);
         
     var options = {
         series: [outValue],
@@ -2316,93 +2109,7 @@ async function donutChart() {
     //clearDateInputsOccupancy();
 
 }
-// async function occupacyBarChart1(){
-//     var options = {
-//         series: [{
-//             name: 'Savings',
-//             data: [2.3, 3.1], // Data for Floor 1 and Floor 2
-//             color: "#1cc88999",
-//             showInLegend: false,
-//         }],
-//         chart: {
-//             height: "100%",
-//             type: 'bar',
-//             toolbar: {
-//                 show: false,
-//             },
-//             background: 'rgba(0,0,0,0)',
-//         },
-//         plotOptions: {
-//             bar: {
-//                 borderRadius: 10,
-//                 columnWidth: '60%', // Adjust the width of bars to make them look centered
-//                 dataLabels: {
-//                     position: 'top', // top, center, bottom
-//                 },
-//             },
-//         },
-//         dataLabels: {
-//             enabled: true,
-//             formatter: function (val) {
-//                 return val;
-//             },
-//             offsetY: -20,
-//             style: {
-//                 fontSize: '12px',
-//                 colors: ["#000000"],
-//             },
-//         },
-//         xaxis: {
-//             categories: ["Floor 1", "Floor 2"], // Only two floors displayed
-//             position: 'top',
-//             axisBorder: {
-//                 show: false,
-//             },
-//             axisTicks: {
-//                 show: false,
-//             },
-//             labels: {
-//                 style: {
-//                     colors: "#000",
-//                     fontSize: '12px',
-//                     fontWeight: 400,
-//                     cssClass: 'apexcharts-xaxis-label',
-//                 },
-//             },
-//             tickPlacement: 'on', 
-//         },
-//         yaxis: {
-//             axisBorder: {
-//                 show: false,
-//             },
-//             axisTicks: {
-//                 show: false,
-//             },
-//             labels: {
-//                 show: false,
-//                 formatter: function (val) {
-//                     return val;
-//                 },
-//             },
-//         },
-//         grid: {
-//             show: true,
-//             borderColor: '#434040',
-//         },
-//         title: {
-//             // Optionally, you can add a title
-//             floating: true,
-//             offsetY: 330,
-//             align: 'center',
-//             style: {
-//                 color: '#444',
-//             },
-//         },
-//     };
 
-//     occupancyChart = new ApexCharts(document.querySelector("#chartdiv9"), options);
-//     occupancyChart.render();
-// }
 removeChart(donutChart);
 async function occupacyBarChart1() {
   
@@ -2592,45 +2299,6 @@ async function occupacyLine() {
             return; // Exit if validation fails
         }
 
-        // var chartData = generateChartData(startDate, endDate);
-
-        // function generateChartData(startDate, endDate) {
-        //     var chartData = [];
-        //     var visits = 1200; // Initial value for occupancy efficiency
-        //     var hits = 1220;
-
-        //     var currentDate = new Date(startDate);
-        //     while (currentDate <= endDate) {
-        //         visits += Math.round((Math.random() < 0.5 ? 1 : -1) * Math.random() * 10);
-        //         hits += Math.round((Math.random() < 0.5 ? 1 : -1) * Math.random() * 10);
-
-        //         chartData.push({
-        //             date: new Date(currentDate),
-        //             occupancyefficiency: visits,
-        //             occupancyefficiency1: hits
-        //         });
-
-        //         currentDate.setDate(currentDate.getDate() + 1);
-        //     }
-        //     return chartData;
-        // }
-
-        // if (chartData.length === 0) {
-        //     alert('No data to display for the selected range');
-        //     return;
-        // }
-        // if (occupancyChart) {
-        //     if (occupancyChart instanceof ApexCharts) {
-        //         console.log("Pie chart destroyed");
-        //         occupancyChart.destroy(); // Dispose the existing chart
-        //     } else if (occupancyChart instanceof AmCharts.AmChart) {
-        //         console.log("Pie chart destroyed");
-        //         occupancyChart.clear(); // Clear the existing AmCharts instance
-        //     } else if (occupancyChart instanceof am4charts.XYChart) {
-        //         console.log("Pie chart destroyed");
-        //         occupancyChart.dispose(); // Dispose the existing am4charts instance
-        //     }
-        // }
 
         occupancyChart = AmCharts.makeChart('chartdiv3', {
             "type": "serial",
@@ -2702,103 +2370,7 @@ async function occupacyLine() {
         }
     }
 }
-// async function occupacyBar() {
-//    // Destroy the existing chart if it exists
-//     // if (currentChart1) {
-//     //     if (currentChart1 instanceof ApexCharts) {
-//     //         console.log("Bar chart destroyed");
-//     //         currentChart1.destroy(); // Dispose the existing chart
-//     //     } else if (currentChart1 instanceof AmCharts.AmChart) {
-//     //         console.log("Bar chart destroyed");
-//     //         currentChart1.clear(); // Clear the existing AmCharts instance
-//     //     } else if (currentChart1 instanceof am4charts.XYChart) {
-//     //         console.log("Bar chart destroyed");
-//     //         currentChart1.dispose(); // Dispose the existing am4charts instance
-//     //     }
-//     // }
-
-//     // Define the data for the two floors
-//     var options = {
-//         series: [
-//             {
-//                 name: 'Occupancy Efficiency', // Series name for Floor 1
-//                 data: [44, 55, 57, 56, 61, 58, 63, 60, 66, 61, 50, 55]
-//             },
-//             // {
-//             //     name: 'Floor 2', // Series name for Floor 2
-//             //     data: [35, 41, 36, 26, 45, 48, 52, 53, 41, 40, 45, 50] // Sample data for Floor 2
-//             // }
-//         ],
-//         chart: {
-//             type: 'bar', // Keep bar type for a vertical column chart
-//             height: '100%',
-//             toolbar: {
-//                 show: false,
-//             },
-//         },
-//         plotOptions: {
-//             bar: {
-//                 horizontal: false, // Set to false for vertical bars
-//                 columnWidth: '55%',
-//                 endingShape: 'rounded',
-//             }
-//         },
-//         colors: ["#E11D74"], // Two different colors for each floor , "#4A90E2"
-//         dataLabels: {
-//             enabled: false,
-//         },
-//         stroke: {
-//             show: true,
-//             width: 0,
-//             colors: ['transparent'],
-//         },
-//         xaxis: {
-//             categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-//             labels: {
-//                 style: {
-//                     colors: '#000000',
-//                 },
-//             },
-//         },
-//         grid: {
-//             show: false,  // Disable background grid lines
-//         },
-//         tooltip: {
-//             y: {
-//                 formatter: function(val) {
-//                     return val; // Customize tooltip value
-//                 },
-//             },
-//         },
-//         legend: {
-//             position: 'top', // Position of the legend
-//             horizontalAlign: 'center', // Center align the legend
-//             labels: {
-//                 colors: ['#000000'], // Legend label color
-//             }
-//         }
-//     };
-
-//     console.log("Creating bar chart...");
-//     occupancyChart = new ApexCharts(document.querySelector("#chartdiv3"), options);
-//     occupancyChart.render();
-// }
 async function occupacyBar() {
-    // Destroy the existing chart if it exists
-    // if (currentChart1) {
-    //     if (currentChart1 instanceof ApexCharts) {
-    //         console.log("Bar chart destroyed");
-    //         currentChart1.destroy(); // Dispose the existing chart
-    //     } else if (currentChart1 instanceof AmCharts.AmChart) {
-    //         console.log("Bar chart destroyed");
-    //         currentChart1.clear(); // Clear the existing AmCharts instance
-    //     } else if (currentChart1 instanceof am4charts.XYChart) {
-    //         console.log("Bar chart destroyed");
-    //         currentChart1.dispose(); // Dispose the existing am4charts instance
-    //     }
-    // }
-
-    // Get the last 12 months and random data
     const months = getLast12Months(); // Get the last 12 months
     const randomData = getRandomData(); // Generate random data for each month
 
@@ -2838,13 +2410,7 @@ async function occupacyBar() {
             colors: ['transparent'],
         },
         xaxis: {
-            categories: months, // Set x-axis categories to the last 12 months
-        //     labels: {
-        //         style: {
-        //             colors: '#000000',
-        //         },
-        //         rotate: 315, // Rotate x-axis labels by 315 degrees
-        //     },
+            categories: months,
            },
         grid: {
             show: false,  // Disable background grid lines
@@ -3026,99 +2592,6 @@ async function replaceIndoorChart(newChartFunction) {
     newChartFunction();
 }
 
-// async function createPieChart() {
-  
-//   const response = await fetch("https://localhost/obix/config/Barclays/IAQ/IAQ/");
-//         const text = await response.text();
-
-//         // Parse the XML data
-//         const parser = new DOMParser();
-//         const xmlDoc = parser.parseFromString(text, "text/xml");
-
-//         // Get all <ref> elements (which include scope1, scope2, etc.)
-//         const outElement = xmlDoc.querySelector('real[name="out"]');
-//         const outValue = parseFloat(outElement.getAttribute('val'));
-//         console.log("out Values" + outValue);
-
-//     const style = document.createElement('style');
-//     style.innerHTML = `
-//         #chartdiv4 .apexcharts-text {
-//             fill: #000000; /* Change this to your desired color */
-//             /* Corrected property name font-size: 20px; */
-//         font-weight: bold; /* Corrected property name */
-//         }
-//     `;
-//     document.head.appendChild(style);
-//     // Pie chart options
-//     var options = {
-//         series: [outValue],
-//         chart: {
-//             height: 290,
-//             type: 'radialBar',
-//         },
-//         plotOptions: {
-//             radialBar: {
-//                 offsetY: 30,
-//                 startAngle: 0,
-//                 endAngle: 360,
-//                 hollow: {
-//                     margin: 5,
-//                     size: '65%',
-//                     background: 'transparent',
-//                 },
-//                 dataLabels: {
-//                     name: { show: true },
-//                     value: { show: true },
-//                     total: {
-//                         show: true,
-//                         label: 'AQI',
-//                         fontSize: '30px',
-//                         fontWeight: 'bold',
-//                         color: function(w) {
-//                             // Dynamically set color based on totalValue
-//                             const totalValue = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-//                             return totalValue > 50 ? 'green' : 'red';
-//                         },
-//                         formatter: function (w) {
-//                             const totalValue = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-//                             return totalValue + (totalValue > 50 ? " Good" : " Bad");
-//                         }
-//                     }
-//                 },
-//                 track: {
-//                     background: '#2F5AD0',
-//                 }
-//             }
-//         },
-//         colors: ["#FF6600"],
-//         labels: ['AQI'],
-//         legend: {
-//             show: true,
-//             floating: true,
-//             fontSize: '16px',
-//             position: 'top',
-//             horizontalAlign: 'center',
-//             offsetY: 1,
-//             labels: { useSeriesColors: true },
-//             markers: { size: 0 },
-//             formatter: function (seriesName, opts) {
-//                 return seriesName;
-//             },
-//             itemMargin: { vertical: 3 }
-//         },
-//         responsive: [{
-//             breakpoint: 480,
-//             options: {
-//                 legend: { show: false }
-//             }
-//         }]
-//     };
-
-//     // Create a new pie chart
-//     aqiCharts = new ApexCharts(document.querySelector("#chartdiv4"), options);
-//     aqiCharts.render();
-//     // clearDateInputsAir()
-// }
 
 async function createPieChart() {
     const response = await fetch("https://localhost/obix/config/Barclays/IAQ/IAQ/");
@@ -3131,7 +2604,7 @@ async function createPieChart() {
     // Get the <real> element value
     const outElement = xmlDoc.querySelector('real[name="out"]');
     const outValue = parseFloat(outElement.getAttribute('val'));
-    console.log("out Values: " + outValue);
+    //console.log("out Values: " + outValue);
 
     // Add style for initial chart appearance
     const style = document.createElement('style');
@@ -3225,117 +2698,6 @@ async function createPieChart() {
 
 replaceIndoorChart(createPieChart);
 
-// Completion Rate Chart
-// async function aqiDonut1() {
-//     var optionsCompletion = {
-//         chart: {
-//             type: 'donut',
-//             height: "300px"
-//         },
-//         series: [68], // Completion rate
-//         labels: ['Completion rate'],
-//         colors: ['#00a65a', '#ddd'],
-//         plotOptions: {
-//             pie: {
-//                 donut: {
-//                     size: '75%',
-//                     track: {
-//                         show: true,
-//                         background: '#f2f2f2', // Background color of the track
-//                         strokeWidth: '100%',    // Set the width of the track
-//                         opacity: 1,             // Opacity of the track
-//                         margin: 10              // Margin between track and the donut
-//                     }
-//                 }
-//             }
-//         },
-//         dataLabels: {
-//             enabled: true,
-//             formatter: function (val) {
-//                 return Math.round(val) + "%";
-//             },
-//             style: {
-//                 fontSize: '24px',
-//                 fontWeight: 'bold'
-//             }
-//         },
-//         annotations: {
-//             position: 'front',
-//             texts: [{
-//                 text: '100%',           // Text to display at center
-//                 x: '50%',               // Horizontal position
-//                 y: '50%',               // Vertical position
-//                 fontSize: '24px',        // Text font size
-//                 fontWeight: 'bold',      // Text font weight
-//                 fill: {
-//                     color: '#000'        // Text color
-//                 }
-//             }]
-//         },
-//         legend: {
-//             position: 'top',      // Position the legend at the top
-//             horizontalAlign: 'center', // Align it to the center
-//         }
-//     };
-//     aqiCharts = new ApexCharts(document.querySelector("#completionRateChart"), optionsCompletion);
-//     await aqiCharts.render();
-// }
-
-// async function aqiDonut2() {
-//     var optionsBounce = {
-//         chart: {
-//             type: 'donut',
-//             height: "300px"
-//         },
-//         series: [68], // Bounce rate
-//         labels: ['Bounce rate'],
-//         colors: ['#dd4b39', '#ddd'],
-//         plotOptions: {
-//             pie: {
-//                 donut: {
-//                     size: '75%',
-//                     track: {
-//                         show: true,
-//                         background: '#f2f2f2', // Background color of the track
-//                         strokeWidth: '100%',    // Set the width of the track
-//                         opacity: 1,             // Opacity of the track
-//                         margin: 10              // Margin between track and the donut
-//                     }
-//                 }
-//             }
-//         },
-//         dataLabels: {
-//             enabled: true,
-//             formatter: function (val) {
-//                 return Math.round(val) + "%";
-//             },
-//             style: {
-//                 fontSize: '24px',
-//                 fontWeight: 'bold'
-//             }
-//         },
-//         annotations: {
-//             position: 'front',
-//             texts: [{
-//                 text: '100%',           // Text to display at center
-//                 x: '50%',               // Horizontal position
-//                 y: '50%',               // Vertical position
-//                 fontSize: '24px',        // Text font size
-//                 fontWeight: 'bold',      // Text font weight
-//                 fill: {
-//                     color: '#000'        // Text color
-//                 }
-//             }]
-//         },
-//         legend: {
-//             position: 'top',      // Position the legend at the top
-//             horizontalAlign: 'center', // Align it to the center
-//         }
-//     };
-
-//     aqiCharts = new ApexCharts(document.querySelector("#bounceRateChart"), optionsBounce);
-//     await aqiCharts.render();
-// }
 var aqiCharts1;
 var aqiCharts2;
 async function aqiDonut1() {
@@ -3490,69 +2852,6 @@ async function aqiDonut1() {
     await aqiCharts2.render();
 }
 
-// async function aqiDonut2() {
-//     var options = {
-//         series: [80],
-//         chart: {
-//             height: 225, // Adjusted height
-//             width: "100%",
-//             type: 'radialBar',
-//             offsetY: 40
-//         },
-//         plotOptions: {
-//             radialBar: {
-//                 hollow: {
-//                     margin: 15,
-//                     size: '70%',
-//                 },
-//                 dataLabels: {
-//                     name: {
-//                         show: false,
-//                         color: '#000',
-//                     },
-//                     value: {
-//                         show: true,
-//                         color: '#000',
-//                         offsetY: 10,
-//                         fontSize: '20px',
-//                         formatter: function (val) {
-//                             return parseInt(val); // Remove the % symbol by returning only the value
-//                         }
-//                     },
-//                 },
-//                 track: {
-//                     background: '#494949',
-//                     strokeWidth: '100%',
-//                     margin: 0
-//                 },
-//                 offsetY: 30,
-//             },
-//         },
-//         fill: {
-//             type: 'solid', // Changed to solid
-//             colors: ['#77E4C8'], // Solid red color
-//         },
-//         colors: ["#77E4C8"],
-//         labels: ['Floor 1'],
-//         legend: {
-//             show: true,
-//             floating: true,
-//             fontSize: '16px',
-//             position: 'top',
-//             horizontalAlign: 'center',
-//             offsetY: 40,
-//             labels: { useSeriesColors: true },
-//             markers: { size: 0 },
-//             formatter: function (seriesName, opts) {
-//                 return seriesName;
-//             },
-//             itemMargin: { vertical: 3 }
-//         },
-//     };
-//     var aqiCharts2 = new ApexCharts(document.querySelector("#bounceRateChart"), options);
-//     await aqiCharts2.render();
-// }
-
 $('#aqiFloor1').on("click", async function () {
     console.log("aqiFloor1 clicked");
     $(".aqiSeparate").show();
@@ -3645,30 +2944,6 @@ async function createBarChart() {
             alert('Start Date cannot be after End Date');
             return;
         }
-        
-
-        // var chartData = generateChartData(startDate, endDate);
-
-        // if (chartData.length === 0) {
-        //     alert('No data to display for the selected range');
-        //     return;
-        // }
-        // function generateChartData(startDate, endDate) {
-        //     var chartData = [];
-        //     var visits = 10;
-        //     var currentDate = new Date(startDate);
-
-        //     while (currentDate <= endDate) {
-        //         visits += Math.round((Math.random() < 0.5 ? 1 : -1) * Math.random() * 10);
-        //         chartData.push({
-        //             date: new Date(currentDate),
-        //             domesticwater: visits,
-        //             flushingwater: visits + Math.round(Math.random() * 30)
-        //         });
-        //         currentDate.setDate(currentDate.getDate() + 1);
-        //     }
-        //     return chartData;
-        // }
         aqiCharts = AmCharts.makeChart('chartdiv4', {
             "type": "serial",
             "theme": "white",
@@ -3738,67 +3013,6 @@ async function createBarChart() {
         }
     }
 }
-// async function aqiBarChart() {
-//     var options = {
-//         series: [{
-//             data: [35,44, 55, 57, 56, 61, 58, 63, 60, 66, 60, 55, 50]
-//         }],
-//         chart: {
-//             type: 'bar',
-//             height: 280,
-//             toolbar: {
-//                 show: false
-//             }
-//         },
-//         plotOptions: {
-//             bar: {
-//                 horizontal: false,
-//                 columnWidth: '55%',
-//                 endingShape: 'rounded'
-//             }
-//         },
-//         dataLabels: {
-//             enabled: false
-//         },
-//         stroke: {
-//             show: true,
-//             width: 2,
-//             colors: ['transparent']
-//         },
-//         xaxis: {
-//             categories: ['Jan','Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-//             labels: {
-//                 style: {
-//                     colors: '#000000',
-//                 }
-//             }
-//         },
-//         yaxis: {
-//             labels: {
-//                 style: {
-//                     colors: '#000000',
-//                 }
-//             }
-//         },
-//         fill: {
-//             colors: ['#FF6600'],  // Add the orange color for bars
-//             opacity: 1
-//         },
-//         tooltip: {
-//             y: {
-//                 formatter: function(val) {
-//                     return val;
-//                 }
-//             }
-//         }
-//     };
-
-//     // Using replaceChart to render the bar chart
-//     replaceIndoorChart(() => {
-//         aqiCharts = new ApexCharts(document.querySelector("#chartdiv4"), options);
-//         aqiCharts.render();
-//     });
-// }
 async function aqiBarChart() {
     // Get the last 12 months and random data
     const months = getLast12Months(); // Get the last 12 months
@@ -3909,41 +3123,6 @@ async function lineChartMonthlyAqi() {
                     }
                 }
             }
-
-    // Generate chart data for the previous month
-    // var chartData = generateChartData(startDate, endDate);
-
-    // function generateChartData(startDate, endDate) {
-    //     var chartData = [];
-    //     var visits = 1200;
-    //     var hits = 1220;
-    //     var views = 1240;
-
-    //     var currentDate = new Date(startDate);
-    //     while (currentDate <= endDate) {
-    //         visits += Math.round((Math.random() < 0.5 ? 1 : -1) * Math.random() * 10);
-    //         hits += Math.round((Math.random() < 0.5 ? 1 : -1) * Math.random() * 10);
-    //         views += Math.round((Math.random() < 0.5 ? 1 : -1) * Math.random() * 10);
-
-    //         chartData.push({
-    //             date: new Date(currentDate),
-    //             scope1: visits,
-    //             scope2: hits,
-    //             scope3: views
-    //         });
-
-    //         currentDate.setDate(currentDate.getDate() + 1);
-    //     }
-    //     return chartData;
-    // }
-
-    // // Alert if no data exists
-    // if (chartData.length === 0) {
-    //     alert('No data to display for the selected range');
-    //     return;
-    // }
-
-    // Create the line chart with the generated data for the previous month
     aqiCharts = AmCharts.makeChart("chartdiv4", {
         "type": "serial",
         "theme": "white",
@@ -4055,108 +3234,6 @@ async function replaceEpiChart(newChartFunction) {
   await newChartFunction();
 }
 
-
-// async function epiDonutChart() {
-//     const style = document.createElement('style');
-//     style.innerHTML = `
-//         #chartdiv5 .apexcharts-text {
-//             fill: #000000; /* Change this to your desired color */
-//             font-weight: bold;
-//         }
-//     `;
-//     document.head.appendChild(style);
-
-//     var seriesData = [33, 33, 34]; // Your data
-//     var totalValue = seriesData.reduce((a, b) => a + b, 0); // Calculate the total value
-
-//     var options = {
-//         series: seriesData,
-//         chart: {
-//             type: 'donut',
-//             height: "100%",
-//             animations: {
-//                 enabled: false // Disable all animations, including rotation
-//             }
-//         },
-//         labels: ['HVAC', 'UPS', 'RP & LTG'], // Customize labels
-//         tooltip: {
-//             y: {
-//                 formatter: function (val) {
-//                     return val; // Customize the tooltip text
-//                 }
-//             }
-//         },
-//         colors: ['#FFB200', '#667BC6', '#D1E9F6'],
-//         legend: {
-//             show: true,
-//             position: 'top', // Position the legend at the top
-//             horizontalAlign: 'center', // Center the legend
-//             labels: {
-//                 colors: Array(5).fill('#000000'), // Set all legend label colors to black
-//             },
-//             offsetY: 0
-//         },
-//         plotOptions: {
-//             pie: {
-//                 donut: {
-//                     size: '50%', // Set the size of the inner donut
-//                     labels: {
-//                         show: true,
-//                         name: {
-//                             show: true,
-//                             fontSize: '30px',
-//                             fontWeight: 'bold',
-//                             color: '#000000',
-//                             formatter: function () {
-//                                 return 'EPI'; // Static 'EPI' label for each slice
-//                             }
-//                         },
-//                         value: {
-//                             show: true,
-//                             fontSize: '30px',
-//                             fontWeight: 'bold',
-//                             color: '#000000',
-//                             formatter: function () {
-//                                 return totalValue; // Static total value displayed for each slice
-//                             }
-//                         },
-//                         total: {
-//                             show: true, // Show the total label
-//                             label: 'EPI', // Static 'EPI' label in the center
-//                             fontSize: '30px',
-//                             fontWeight: 'bold',
-//                             color: '#000000', // Total text color
-//                             formatter: function () {
-//                                 return totalValue; // Return the calculated total value
-//                             }
-//                         }
-//                     },
-//                     offsetY: 10
-//                 }
-//             }
-//         },
-//         responsive: [{
-//             breakpoint: 480,
-//             options: {
-//                 chart: {
-//                     width: 200
-//                 },
-//                 legend: {
-//                     position: 'top'
-//                 }
-//             }
-//         }],
-//         stroke: {
-//             show: false // Disable stroke (border) around the donut segments
-//         }
-//     };
-
-//     // Create a new chart instance
-//     epiChart = new ApexCharts(document.querySelector("#chartdiv5"), options);
-//     epiChart.render();
-//     //clearDateInputsEPI();
-// }
-//apexChart
 let epiChart; // Declare the variable globally
 
 async function epiDonutChart() {
@@ -4185,24 +3262,6 @@ async function epiDonutChart() {
             }
         `;
         document.head.appendChild(style);
-        
-        // Check if there is an existing chart and destroy it
-        // if (epiChart) {
-        //     if (epiChart instanceof ApexCharts) {
-        //         console.log("ApexCharts instance destroyed");
-        //         epiChart.destroy(); // Destroy the existing ApexCharts instance
-        //     } 
-        //     // Check if epiChart is an instance of AmCharts
-        //     else if (epiChart instanceof AmCharts.AmChart) {
-        //         console.log("AmCharts instance destroyed");
-        //         epiChart.clear(); // Clear the existing AmCharts instance
-        //     } 
-        //     // Check if epiChart is an instance of am4charts.XYChart
-        //     else if (epiChart instanceof am4charts.XYChart) {
-        //         console.log("am4charts.XYChart instance destroyed");
-        //         epiChart.dispose(); // Dispose the existing am4charts.XYChart instance
-        //     }
-        // }
 
         // Chart configuration
         const options = {
