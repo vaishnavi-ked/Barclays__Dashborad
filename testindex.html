@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>amCharts 5 Example</title>
+    <style>
+        #chartdiv {
+            width: 100%;
+            height: 300px;
+        }
+    </style>
+</head>
+<body>
+  <div id="chartdiv"></div>
+</div>
+
+<div id="chartdiv"></div>
+<script src="public/vendor/amchart4/core.js"></script>
+      <script src="public/vendor/amchart4/chart.js"></script>
+      <script src="public/vendor/amchart4/themes/dark.js"></script>
+      <script src="public/vendor/amchart4/themes/animated.js"></script>
+      <script src="public/vendor/amchart4/lang/es_ES.js"></script>
+<script>
+// async function lineChartMonthlyCo25() {
+//     try {
+//         // Get the current date and set start and end dates for the previous month
+//         const today = new Date();
+//         const currentMonth = today.getMonth();
+//         const startDate = new Date(today.getFullYear(), currentMonth - 1, 1);
+//         const endDate = new Date(today.getFullYear(), currentMonth, 0);
+
+//         const startISO = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+//         const endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+
+//         const waters = ['scope1date', 'scope2date', 'scope3date'];
+//         let waterValues = [];
+//         const url = "https://localhost";
+//         // Fetch data asynchronously for each scope
+//         for (let scope of waters) {
+//             const urlToFetch = `${url}/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${startISO}T00:00:00.000+05:30&end=${endISO}T23:59:59.000+05:30`;
+
+//             const response = await fetch(urlToFetch);
+//             if (!response.ok) {
+//                 console.error(`Error fetching data for ${scope}: ${response.status} - ${response.statusText}`);
+//                 continue;
+//             }
+
+//             const text = await response.text();
+//             const parser = new DOMParser();
+//             const xmlDoc = parser.parseFromString(text, "text/xml");
+//             const objs = xmlDoc.getElementsByTagName("obj");
+
+//             for (let i = 0; i < objs.length; i++) {
+//                 const obj = objs[i];
+//                 const abstime = obj.getElementsByTagName("abstime")[0];
+//                 const real = obj.getElementsByTagName("real")[0];
+
+//                 if (abstime && real) {
+//                     const dateText = abstime.getAttribute("val");
+//                     const valueText = real.getAttribute("val");
+
+//                     if (valueText && dateText) {
+//                         const value = parseFloat(valueText).toFixed(2);
+//                         const date = new Date(dateText);
+//                         const formattedDate = date.toLocaleDateString("en-US", {
+//                             month: "short",
+//                             day: "numeric"
+//                         });
+//                         const dateStr = date.toDateString();  // Use toDateString to compare without time
+
+// //                         // Add the data for each scope
+//                         const existingEntry = waterValues.find(entry => entry.date.toDateString() === dateStr);
+
+//                         // const dateStr = formattedDate;
+//                         // const existingEntry = waterValues.find(entry => entry.date.getTime() === date.getTime());
+
+//                         if (existingEntry) {
+//                             existingEntry[scope] = parseFloat(value);
+//                         } else {
+//                             waterValues.push({
+//                                 date: date,
+//                                 [scope]: parseFloat(value)
+//                             });
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+
+//         // Create a new chart only if no existing chart is present
+//         if (chart) {
+//             chart.dispose(); // Dispose of any existing chart instance
+//         }
+
+//         // Create the new chart instance
+//         var chart = am4core.create("chartdiv", am4charts.XYChart);
+
+//         // Create the x-axis (date axis)
+// //         var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+// //         dateAxis.dataFields.date = "date";
+// //         dateAxis.renderer.grid.template.location = 0;
+// //         dateAxis.tooltip.disabled = true;
+// //         dateAxis.renderer.minGridDistance = 70;
+// //         console.dir(dateAxis);
+
+// // // Optionally, log specific properties
+// // console.log("Date Axis Start:", dateAxis.start);
+// // console.log("Date Axis End:", dateAxis.end);
+
+// //         // Create the y-axis (value axis)
+// //         var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+
+// //         // Create a scrollbar for the top
+// //         chart.scrollbarX = new am4core.Scrollbar();
+// //         chart.scrollbarX.parent = chart.topAxesContainer;
+
+// //         // Define a function to create series dynamically
+// //         const createSeries = (field, name, color) => {
+// //             const series = chart.series.push(new am4charts.LineSeries());
+// //             series.dataFields.valueY = field;
+// //             series.dataFields.dateX = "date";
+// //             series.name = name;
+// //             series.strokeWidth = 2;
+// //             series.tensionX = 0.77;
+// //             series.stroke = am4core.color(color);
+// //             series.tooltipText = "{name}: [bold]{valueY}[/]";
+// //             return series;
+// //         };
+
+// //         // Enable legend
+// //         chart.legend = new am4charts.Legend();
+// //         chart.legend.position = "top";
+// //         chart.legend.paddingBottom = 10;
+// //         chart.legend.labels.template.maxWidth = 95;
+
+// //         // Prepare data for the chart
+// //         waterValues.forEach(item => {
+// //             item.date = new Date(item.date).getTime();
+// //             console.log("item date " + item.date);
+// //         });
+
+// //         // Create series for each scope
+// //         createSeries("scope1date", "Scope 1", "#FFB22C");  // Blue
+// //         createSeries("scope2date", "Scope 2", "#A4CE95");  // Orange
+// //         createSeries("scope3date", "Scope 3", "#FFB22C");  // Green
+
+// //         // Set data to the chart
+// //         chart.data = waterValues;
+// //         console.log("chart data  " + chart.data);
+// //         chart.cursor = new am4charts.XYCursor();
+
+// //         chart.logo.disabled = true;
+// //         console.log("Chart rendered successfully.");
+        
+//         // Create axes
+// var categoryAxis = chart.xAxes.push(new am4charts.CategoryAxis());
+// categoryAxis.dataFields.category = "date"; // This should refer to the date field for proper time axis
+// categoryAxis.renderer.minGridDistance = 50;
+// categoryAxis.renderer.grid.template.location = 0.5;
+// categoryAxis.startLocation = 0.5;
+// categoryAxis.endLocation = 0.5;
+// console.log(categoryAxis.start);
+// console.log(categoryAxis.end);
+// // Create value axis (y-axis)
+// var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+// valueAxis.baseValue = 0; // Set base value for y-axis
+
+// // Function to create series dynamically
+// const createSeries = (field, name, color) => {
+//     const series = chart.series.push(new am4charts.LineSeries());
+//     series.dataFields.valueY = field;
+//     series.dataFields.categoryX = "date"; // x-axis mapped to date
+//     series.name = name;
+//     series.strokeWidth = 2;
+//     series.tensionX = 0.77;
+//     series.stroke = am4core.color(color);
+//     series.tooltipText = "{name}: [bold]{valueY}[/]";
+    
+//     // Create a series range for highlighting negative values (optional)
+//     var range = valueAxis.createSeriesRange(series);
+//     range.value = 0;
+//     range.endValue = -1000; // Define a negative range
+//     range.contents.stroke = am4core.color("#FF0000");
+//     range.contents.fill = range.contents.stroke;
+
+//     return series;
+// };
+
+// // Enable legend
+// chart.legend = new am4charts.Legend();
+// chart.legend.position = "top";
+// chart.legend.paddingBottom = 10;
+// chart.legend.labels.template.maxWidth = 95;
+
+// // Create series for each scope (passing respective data field names and colors)
+// createSeries("scope1date", "Scope 1", "#FFB22C");  // Orange
+// createSeries("scope2date", "Scope 2", "#A4CE95");  // Green
+// createSeries("scope3date", "Scope 3", "#FFB22C");  // Blue
+
+// // Add scrollbar (only add one scrollbar, not per series)
+// var scrollbarX = new am4charts.XYChartScrollbar();
+// //scrollbarX.series.push(chart.series.getIndex(0)); // Add the first series to the scrollbar
+// chart.scrollbarX = scrollbarX;
+
+// // Create cursor for chart interaction (showing tooltip on hover)
+// chart.cursor = new am4charts.XYCursor();
+        
+//     } catch (error) {
+//         console.error("Error in lineChartMonthlyCo25 function:", error);
+//     }
+// }
+// lineChartMonthlyCo25();
+
+</script>
+<script>
+
+am4core.ready(async function() {
+
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const startDate = new Date(today.getFullYear(), currentMonth - 1, 1);
+    const endDate = new Date(today.getFullYear(), currentMonth, 0);
+
+    const startISO = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+    const endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+
+    const waters = ['scope1date', 'scope2date', 'scope3date'];
+    let waterValues = [];
+    const url = "https://localhost";
+
+    // Fetch data asynchronously for each scope
+    for (let scope of waters) {
+        const urlToFetch = `${url}/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${startISO}T23:59:59.000+05:30&end=${endISO}T23:59:59.000+05:30`;
+        console.log(urlToFetch);
+        try {
+            const response = await fetch(urlToFetch);
+            console.log(response);
+            if (!response.ok) {
+                console.error(`Error fetching data for ${scope}: ${response.status} - ${response.statusText}`);
+                continue;
+            }
+
+            const text = await response.text();
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(text, "text/xml");
+            const objs = xmlDoc.getElementsByTagName("obj");
+
+            for (let i = 0; i < objs.length; i++) {
+                const obj = objs[i];
+                const abstime = obj.getElementsByTagName("abstime")[0];
+                const real = obj.getElementsByTagName("real")[0];
+
+                if (abstime && real) {
+                    const dateText = abstime.getAttribute("val");
+                    const valueText = real.getAttribute("val");
+
+                    if (valueText && dateText) {
+                        const value = parseFloat(valueText).toFixed(2);
+                        const date = new Date(dateText);
+                        const formattedDate = date.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric"
+                        });
+                        const dateStr = date.toDateString();  // Use toDateString to compare without time
+
+                        const existingEntry = waterValues.find(entry => entry.date.toDateString() === dateStr);
+
+                        if (existingEntry) {
+                            existingEntry[scope] = parseFloat(value);
+                        } else {
+                            waterValues.push({
+                                date: date,
+                                [scope]: parseFloat(value)
+                            });
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`Error fetching data for ${scope}: ${error.message}`);
+        }
+    }
+
+    // Themes begin
+    am4core.useTheme(am4themes_animated);
+    // Themes end
+
+    // Create chart instance
+    var chart = am4core.create("chartdiv", am4charts.XYChart);
+    chart.paddingRight = 20;
+
+    // Add data
+    chart.data = waterValues;
+            waterValues.forEach(item => {
+    item.date = new Date(item.date).getTime();  // Convert to timestamp
+    console.log("item date (timestamp): " + item.date);
+
+    // Convert timestamp back to a readable date
+    const formattedDate = new Date(item.date).toLocaleDateString("en-US", {
+        // year: "numeric",
+        month: "short",
+        day: "numeric"
+    });
+     item.date = formattedDate;
+    console.log("Formatted item date: " + formattedDate);
+});
+
+
+    // Create axes
+    var categoryAxis = chart.xAxes.push(new am4charts.CategoryAxis());
+    categoryAxis.dataFields.category = "date"; // Use 'date' instead of 'year'
+    categoryAxis.renderer.minGridDistance = 50;
+    categoryAxis.renderer.grid.template.location = 0.5;
+    categoryAxis.startLocation = 0.5;
+    categoryAxis.endLocation = 0.5;
+
+    var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+    valueAxis.baseValue = 0;
+
+    // Function to create series
+    function createSeries(valueField, name, color) {
+        var series = chart.series.push(new am4charts.LineSeries());
+        series.dataFields.valueY = valueField;
+        series.dataFields.categoryX = "date"; // Use 'date' instead of 'year'
+        series.name = name;
+        series.strokeWidth = 2;
+        series.tensionX = 0.77;
+        series.stroke = color;
+
+        // Bullet to display tooltips
+        var bullet = series.bullets.push(new am4charts.Bullet());
+        bullet.tooltipText = "{valueY}";
+
+       bullet.adapter.add("fill", function(fill, target) {
+        // If the value is negative, color the bullet red, else use the series color
+        if (target.dataItem.valueY < 0) {
+            return am4core.color("#FF0000"); // Red for negative values
+        }
+        return series.stroke; // Use the series stroke color (the color passed to createSeries)
+    });
+
+        return series;
+    }
+    chart.legend = new am4charts.Legend();
+chart.legend.position = "top";
+chart.legend.paddingBottom = 10;
+chart.legend.labels.template.maxWidth = 95;
+    // Create three series with different data fields and colors
+    createSeries("scope1date", "Scope 1", am4core.color("#FFB22C"));
+    createSeries("scope2date", "Scope 2", am4core.color("#A4CE95"));
+    createSeries("scope3date", "Scope 3", am4core.color("#FFB22C"));
+
+    // Add scrollbar
+    // var scrollbarX = new am4charts.XYChartScrollbar();
+    // scrollbarX.series.push(chart.series.values[0]);  // Add the first series to the scrollbar
+    // chart.scrollbarX = scrollbarX;
+    // scrollbarX.height = 30;
+    chart.scrollbarX = new am4core.Scrollbar();
+   chart.scrollbarX.marginBottom = 20;
+
+    chart.cursor = new am4charts.XYCursor();
+
+});  // end am4core.ready()
+
+</script>
+</body>
+</html>
