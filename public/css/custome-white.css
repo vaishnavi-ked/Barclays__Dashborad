@@ -45,8 +45,12 @@
     ) !important;
     background-size: cover;
   }
-#chartdiv,#chartdiv1,#chartdiv3,#chartdiv2,#chartdiv4,#chartdiv5,#chartdiv6,#chartdiv7,#mychart1,
+#chartdiv,#chartdiv1,#chartdiv3,#chartdiv2,#chartdiv4,#chartdiv6,#chartdiv7,#mychart1,
 #pue_chart {
+  width: 100%;
+  height: 300px;
+}
+#chartdiv5{
   width: 100%;
   height: 300px;
 }

@@ -14,15 +14,14 @@ jQuery(function () {
     //  intervalId=setInterval(pieChart, 5000);
 
     let emissionChart;
-    async function disposeChart(newChartFunction) {
+    async function disposeChartCo(newChartFunction) {
         // Destroy the existing chart if it exists
         if (emissionChart) {
             if (emissionChart instanceof ApexCharts) {
                 emissionChart.destroy(); // Dispose the existing ApexCharts instance
-            } else if (emissionChart instanceof am4charts.Chart) {
+            } else {
                 emissionChart.dispose(); // Dispose the existing am4charts instance
             }
-            clearDateInputs();
         }
         newChartFunction();
     }
@@ -37,6 +36,7 @@ jQuery(function () {
                 font-weight: bold; /* Ensure bold text */
             }
         `;
+        style.id = 'chartdiv-styles';
         document.head.appendChild(style);
         // Initialize scopeValues as an empty array
         let scopeValues = [];
@@ -191,7 +191,7 @@ jQuery(function () {
 
     }
 
-    disposeChart(pieChart);
+    disposeChartCo(pieChart);
 
     async function lineChartMonthlyCo25() {
         am4core.ready(async function () {
@@ -206,7 +206,6 @@ jQuery(function () {
 
             const waters = ['scope1date', 'scope2date', 'scope3date'];
             let waterValues = [];
-            const url = "https://localhost";
 
             // Fetch data asynchronously for each scope
             for (let scope of waters) {
@@ -353,7 +352,6 @@ jQuery(function () {
             var endDateValue = $("#endDate").val();
             const waters = ['scope1date', 'scope2date', 'scope3date'];
             let waterValues = [];
-            // const url = "https://localhost";
 
             // Fetch data asynchronously for each scope
             for (let scope of waters) {
@@ -494,75 +492,81 @@ jQuery(function () {
     }
 
 
-   async function createBarChart1() {
-    const scopeData = [[], [], []]; // Scope 1, Scope 2, Scope 3
-    const last12MonthsData = getLast12Months1();
-    console.log(last12MonthsData);
-    for (const month of last12MonthsData) {
-        const scopeUrls = [
-            `${url}/obix/histories/SqlServerDatabase/YearlyScope1/~historyQuery?start=${month.startDate}T23:59:59.000+05:30&limit=1`,
-            `${url}/obix/histories/SqlServerDatabase/YearlyScope2/~historyQuery?start=${month.startDate}T23:59:59.000+05:30&limit=1`,
-            `${url}/obix/histories/SqlServerDatabase/YearlyScope3/~historyQuery?start=${month.startDate}T23:59:59.000+05:30&limit=1`
-        ];
-        const monthDate = month.startDate;
-        console.log(month);
-console.log(scopeUrls);
-        for (let i = 0; i < scopeUrls.length; i++) {
-            try {
-                const response = await fetch(scopeUrls[i]);
-                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-                const text = await response.text();
-                const parser = new DOMParser();
-                const xml = parser.parseFromString(text, "application/xml");
-
-                const records = xml.getElementsByTagName("list");
-                for (let record of records) {
-                    const abstime = record.getElementsByTagName("abstime")[0]?.getAttribute("val");
-                    console.log("abstime " + abstime);
- const dateObj = new Date(abstime);
-
-// Format the date to 'YYYY-MM-DD'
-const formattedDate = dateObj.toISOString().split('T')[0];
-
-console.log("formated " + formattedDate); // Logs: 2024-11-01
-                    const value = record.getElementsByTagName("real")[0]?.getAttribute("val");
-                    if (monthDate == formattedDate && value) scopeData[i].push(parseFloat(value).toFixed(2));
+    async function createBarChart1() {
+        const scopeData = [[], [], []]; // Scope 1, Scope 2, Scope 3
+        const last12MonthsData = getLast12Months1();
+        console.log("bar " + last12MonthsData);
+    
+        for (const month of last12MonthsData) {
+            const scopeUrls = [
+                `${url}/obix/histories/SqlServerDatabase/YearlyScope1/~historyQuery?start=${month.startDate}T23:59:59.000+05:30&limit=1`,
+                `${url}/obix/histories/SqlServerDatabase/YearlyScope2/~historyQuery?start=${month.startDate}T23:59:59.000+05:30&limit=1`,
+                `${url}/obix/histories/SqlServerDatabase/YearlyScope3/~historyQuery?start=${month.startDate}T23:59:59.000+05:30&limit=1`
+            ];
+    
+            for (let i = 0; i < scopeUrls.length; i++) {
+                try {
+                    const response = await fetch(scopeUrls[i]);
+                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const xml = parser.parseFromString(text, "application/xml");
+            
+                    const records = xml.getElementsByTagName("list");
+                    for (let record of records) {
+                        // Fetch `abstime` and `real` values
+                        const abstime = record.getElementsByTagName("abstime")[0]?.getAttribute("val");
+                        const realValue = record.getElementsByTagName("real")[0]?.getAttribute("val");
+            
+                        // Match the `abstime` with the corresponding `month.startDate`
+                        if (abstime && realValue) {
+                            const abstimeDate = new Date(abstime);
+                            const formattedAbstime = `${abstimeDate.getFullYear()}-${String(abstimeDate.getMonth() + 1).padStart(2, '0')}-${String(abstimeDate.getDate()).padStart(2, '0')}`;
+            
+                            if (formattedAbstime === month.startDate) {
+                                scopeData[i].push(parseFloat(realValue).toFixed(2));
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error fetching data for scope ${i + 1}:`, error);
+                    scopeData[i].push(null); // Push null to maintain alignment
                 }
-            } catch (error) {
-                console.error(`Error fetching data for scope ${i + 1}:`, error);
-                scopeData[i].push(null); // Push null to maintain alignment
+            }            
+        }
+    
+        try {
+            const existingStyle = document.getElementById('chartdiv-styles');
+            if (existingStyle) {
+                existingStyle.remove();
             }
+            const chartOptions = {
+                series: [
+                    { name: 'Scope 1', data: scopeData[0] },
+                    { name: 'Scope 2', data: scopeData[1] },
+                    { name: 'Scope 3', data: scopeData[2] }
+                ],
+                chart: { type: 'bar', height: "100%", stacked: false, toolbar: { show: false } },
+                plotOptions: { bar: { horizontal: false, columnWidth: '80%', endingShape: 'rounded' } },
+                colors: ["#FFB22C", "#A4CE95", "#FFD93D"],
+                dataLabels: { enabled: false },
+                xaxis: { categories: getLast12Months() },
+                grid: { show: true },
+                tooltip: {
+                    y: { formatter: (val) => `${val} metric tons` }
+                },
+                legend: { position: 'top', horizontalAlign: 'center', labels: { colors: ['#000000'] } },
+                stroke: { show: true, width: 2, colors: ['transparent'] },
+                fill: { opacity: 1 }
+            };
+    
+            emissionChart = new ApexCharts(document.querySelector("#chartdiv"), chartOptions);
+            emissionChart.render();
+        } catch (error) {
+            console.error("Error processing the data and rendering the chart:", error);
         }
     }
-
-    try {
-        const chartOptions = {
-            series: [
-                { name: 'Scope 1', data: scopeData[0] },
-                { name: 'Scope 2', data: scopeData[1] },
-                { name: 'Scope 3', data: scopeData[2] }
-            ],
-            chart: { type: 'bar', height: "100%", stacked: false, toolbar: { show: false } },
-            plotOptions: { bar: { horizontal: false, columnWidth: '80%', endingShape: 'rounded',barGroupPadding: 0  } },
-            colors: ["#FFB22C", "#A4CE95", "#FFD93D"],
-            dataLabels: { enabled: false },
-            xaxis: { categories: getLast12Months() },
-            grid: { show: true },
-            tooltip: {
-                y: { formatter: (val) => `${val} metric tons` }
-            },
-            legend: { position: 'top', horizontalAlign: 'center', labels: { colors: ['#000000'] } },
-            stroke: { show: true, width: 1, colors: ['transparent'] },
-            fill: { opacity: 1 }
-        };
-
-        const emissionChart = new ApexCharts(document.querySelector("#chartdiv"), chartOptions);
-        emissionChart.render();
-    } catch (error) {
-        console.error("Error processing the data and rendering the chart:", error);
-    }
-}
 
 
 
@@ -584,92 +588,191 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
     // Event listeners to update data based on date range or chart type selection
     $("#startDate, #endDate").on("change", async function () {
         // clearDateInputsWater();
-        await disposeChart(dateRangeCo2); // Load initial data for the selected date range
+        await disposeChartCo(dateRangeCo2); // Load initial data for the selected date range
         // startUpdateInterval(lineChart2); // Set interval to keep updating line chart data
     });
 
     $("#sav_monthly_btn").on("click", async function () {
         clearDateInputs();
-        await disposeChart(lineChartMonthlyCo25); // Load initial data for the monthly chart
+        await disposeChartCo(lineChartMonthlyCo25); // Load initial data for the monthly chart
         //startUpdateInterval(lineChartMonthlyCo25); // Start interval for monthly updates
     });
 
     $("#sav_daily_btn").on("click", async function () {
         clearDateInputs();
-        await disposeChart(pieChart); // Load initial data for the daily pie chart
-        startUpdateInterval(pieChart); // Start interval for daily pie chart updates
+        await disposeChartCo(pieChart); // Load initial data for the daily pie chart
+        //startUpdateInterval(pieChart); // Start interval for daily pie chart updates
     });
 
     $("#sav_yearly_btn").on("click", async function () {
         clearDateInputs();
-        await disposeChart(createBarChart1); // Load initial data for the yearly bar chart
+        await disposeChartCo(createBarChart1); // Load initial data for the yearly bar chart
         //startUpdateInterval(createBarChart1); // Start interval for yearly chart updates
     });
     /* co2 emmision end */
 
     /* water consumption start */
 
-    let chart = null; // Declare chart globally to keep track of it
+    let waterChart = null; // Declare chart globally to keep track of it
 
+    async function disposeChartWater(newChartFunction) {
+        // Destroy the existing chart if it exists
+        if (waterChart) {
+            if (waterChart instanceof ApexCharts) {
+                waterChart.destroy(); // Dispose the existing ApexCharts instance
+            } else if (waterChart instanceof am4charts.Chart) {
+                waterChart.dispose(); // Dispose the existing am4charts instance
+            }
+            clearDateInputs();
+        }
+        newChartFunction();
+    }
+    // async function pieChart1() {
+    //     let scopeValues = [];
+    //     const scopes = ['domestic', 'flushing'];
+
+    //     // Fetch data for each scope
+    //     for (let scope of scopes) {
+    //         const responses = await fetch(`${url}/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${previousDate}T23:59:59.000+05:30&limit=1`);
+    //         console.log("response for scope " + scope, responses);
+    //         const text = await responses.text();
+
+    //         // Parse the XML data
+    //         const parser = new DOMParser();
+    //         const xmlDoc = parser.parseFromString(text, "text/xml");
+
+    //         // Get all <obj> elements
+    //         const objs = xmlDoc.getElementsByTagName("list");
+    //         console.log("length " + objs.length);
+    //         // Process each <obj> element
+    //         for (let i = 0; i < objs.length; i++) {
+    //             const obj = objs[i];
+    //             const real = obj.getElementsByTagName("real")[0]; // Get the <real> tag
+
+    //             if (real) {
+    //                 const valueText = real.getAttribute("val"); // Get the value of the <real> tag
+    //                 console.log("value text " + valueText);
+
+    //                 if (valueText) {
+    //                     scopeValues.push({
+    //                         category: scope,
+    //                         [scope]: parseFloat(valueText).toFixed(2)
+    //                     });
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     // Initialize amCharts when the data is ready
+    //     am4core.ready(function () {
+            
+    //         // Themes begin
+    //         am4core.useTheme(am4themes_animated);
+
+    //         // Create chart instance if not already created
+    //         waterChart = am4core.create("chartdiv1", am4charts.PieChart);
+
+    //         // Add data to chart dynamically from fetched data
+    //         waterChart.data = scopeValues;
+    //         console.log("scopevalues" + scopeValues);
+    //         // Add and configure Series
+    //         var pieSeries = waterChart.series.push(new am4charts.PieSeries());
+    //         pieSeries.dataFields.value = "value";
+    //         pieSeries.dataFields.category = "category";
+
+    //         // Set pie chart colors
+    //         pieSeries.slices.template.stroke = am4core.color("transparent");
+    //         pieSeries.slices.template.strokeOpacity = 0;
+
+    //         // Example of setting colors for each slice (can be dynamically set based on data if needed)
+    //         pieSeries.colors.list = [
+    //             am4core.color("#C65BCF"), // Domestic Use
+    //             am4core.color("#39A7FF")  // Flushing Use
+    //         ];
+
+    //         pieSeries.ticks.template.disabled = true;
+    //         pieSeries.alignLabels = false;
+            // pieSeries.labels.template.text = "{value.percent.formatNumber('#.0')}%";
+            // pieSeries.labels.template.radius = am4core.percent(-40);
+            // pieSeries.labels.template.fill = am4core.color("#000000");
+
+    //         // Initial animation
+    //         pieSeries.hiddenState.properties.opacity = 1;
+    //         pieSeries.hiddenState.properties.endAngle = -90;
+    //         pieSeries.hiddenState.properties.startAngle = -90;
+
+    //         waterChart.hiddenState.properties.radius = am4core.percent(-40);
+    //         pieSeries.legendSettings.valueText = "{ }"; // Remove value text
+
+    //         // Add legend at the top
+    //         waterChart.legend = new am4charts.Legend();
+    //         waterChart.legend.position = "top";
+    //         waterChart.legend.layout = "horizontal";
+    //         waterChart.legend.contentAlign = "center"; // Center the legend horizontally
+    //         waterChart.legend.labels.template.interactionsEnabled = false;
+
+    //         // Configure legend labels and reduce spacing
+    //         waterChart.legend.labels.template.text = "{category}: {value} L"; // Updated label format
+    //         waterChart.legend.labels.template.fill = am4core.color("#000000");
+    //         waterChart.legend.labels.template.maxWidth = 100; // Reduce max width for labels
+    //         waterChart.legend.labels.template.padding(0, 0, 0, 0); // Adjust label padding (top, right, bottom, left)
+
+    //         // // Configure legend item containers to minimize spacing
+    //         waterChart.legend.itemContainers.template.padding(0, 0, 0, 0); // Adjust item container padding
+    //         waterChart.legend.itemContainers.template.margin(0, 5, 0, 5); //Adjust item container margin
+    //         // //chart.legend.itemContainers.template.minWidth = undefined; // Remove minWidth to make it flexible
+    //         waterChart.legend.itemContainers.template.maxWidth = 180; // Limit max width for each item
+
+    //         waterChart.logo.disabled = true;
+
+    //     });
+    // }
     async function pieChart1() {
-        const response = await fetch("https://localhost/obix/config/Barclays/Water$20Consumption/");
-        console.log("response " + response);
-        const text = await response.text();
-
-        // Parse the XML data
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(text, "text/xml");
-
-        // Get all <ref> elements (which include scope1, scope2, etc.)
-        const refs = xmlDoc.getElementsByTagName("ref");
-
-        // Initialize arrays to store scope names and values
-        let waterNames = [];
-        let waterValues = [];
-
-        // Iterate through the <ref> elements to extract scope names and their display values
-        for (let i = 0; i < refs.length; i++) {
-            const ref = refs[i];
-
-            const displayName = ref.getAttribute("name");
-
-            // If display value contains a valid number, extract it
-            if (displayName == "Total_DOMESTIC_Use" || displayName == "Total_FLUSHING_Use") {
-                const valueText = ref.getAttribute("display");
-                const valueMatch = valueText && valueText.match(/(^\d+(\.\d+)?)/); // Match numeric value
-                if (valueMatch) {
-                    const value = parseFloat(valueMatch[0]); // Parse the numeric value
-                    const friendlyName = displayName === "Total_DOMESTIC_Use" ? "Domestic Water" : "Flushing Water";
-                    waterNames.push(friendlyName); // Add the display name to the list
-                    waterValues.push(value); // Add the value to the list
+        let scopeValues = [];
+        const scopes = ['domestic', 'flushing'];
+    
+        // Fetch data for each scope
+        for (let scope of scopes) {
+            try {
+                const response = await fetch(`${url}/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${previousDate}T23:59:59.000+05:30&limit=1`);
+                if (!response.ok) {
+                    console.error(`Failed to fetch data for ${scope}: ${response.statusText}`);
+                    continue;
                 }
+                const text = await response.text();
+    
+                // Parse the XML data
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(text, "text/xml");
+    
+                // Get the first <real> tag
+                const real = xmlDoc.querySelector("real");
+                if (real) {
+                    const valueText = real.getAttribute("val");
+                    if (valueText) {
+                        scopeValues.push({
+                            category: scope,
+                            value: parseFloat(valueText).toFixed(2) // Unified key 'value' for the chart
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error(`Error fetching data for ${scope}:`, error);
             }
         }
-
-        // Initialize amCharts when the data is ready
-        am4core.ready(function () {
+             am4core.ready(function () {
+            
             // Themes begin
             am4core.useTheme(am4themes_animated);
 
-            // Check if the chart is already initialized
-            if (chart) {
-                if (chart instanceof am4charts.PieChart) {
-                    console.log("Chart destroyed");
-                    chart.dispose(); // Dispose the existing chart if already created
-                }
-            }
-
             // Create chart instance if not already created
-            chart = am4core.create("chartdiv1", am4charts.PieChart);
+            waterChart = am4core.create("chartdiv1", am4charts.PieChart);
 
             // Add data to chart dynamically from fetched data
-            chart.data = waterNames.map((name, index) => ({
-                category: name,
-                value: waterValues[index]
-            }));
-
+            waterChart.data = scopeValues;
+            
             // Add and configure Series
-            var pieSeries = chart.series.push(new am4charts.PieSeries());
+            var pieSeries = waterChart.series.push(new am4charts.PieSeries());
             pieSeries.dataFields.value = "value";
             pieSeries.dataFields.category = "category";
 
@@ -691,191 +794,188 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
 
             // Initial animation
             pieSeries.hiddenState.properties.opacity = 1;
-            pieSeries.hiddenState.properties.endAngle = -90;
+            pieSeries.hiddenState.properties.endAngle = 90;
             pieSeries.hiddenState.properties.startAngle = -90;
-
-            chart.hiddenState.properties.radius = am4core.percent(-40);
+            waterChart.hiddenState.properties.radius = am4core.percent(-40);
             pieSeries.legendSettings.valueText = "{ }"; // Remove value text
 
             // Add legend at the top
-            chart.legend = new am4charts.Legend();
-            chart.legend.position = "top";
-            chart.legend.layout = "horizontal";
-            chart.legend.contentAlign = "center"; // Center the legend horizontally
-            chart.legend.labels.template.interactionsEnabled = false;
+            waterChart.legend = new am4charts.Legend();
+            waterChart.legend.position = "top";
+            waterChart.legend.layout = "horizontal";
+            waterChart.legend.contentAlign = "center"; // Center the legend horizontally
+            waterChart.legend.labels.template.interactionsEnabled = false;
 
             // Configure legend labels and reduce spacing
-            chart.legend.labels.template.text = "{category}: {value} L"; // Updated label format
-            chart.legend.labels.template.fill = am4core.color("#000000");
-            chart.legend.labels.template.maxWidth = 100; // Reduce max width for labels
-            chart.legend.labels.template.padding(0, 0, 0, 0); // Adjust label padding (top, right, bottom, left)
+            waterChart.legend.labels.template.text = "{category}: {value} L"; // Updated label format
+            waterChart.legend.labels.template.fill = am4core.color("#000000");
+            waterChart.legend.labels.template.maxWidth = 100; // Reduce max width for labels
+            waterChart.legend.labels.template.padding(0, 0, 0, 0); // Adjust label padding (top, right, bottom, left)
 
             // // Configure legend item containers to minimize spacing
-            chart.legend.itemContainers.template.padding(0, 0, 0, 0); // Adjust item container padding
-            chart.legend.itemContainers.template.margin(0, 5, 0, 5); //Adjust item container margin
+            waterChart.legend.itemContainers.template.padding(0, 0, 0, 0); // Adjust item container padding
+            waterChart.legend.itemContainers.template.margin(0, 5, 0, 5); //Adjust item container margin
             // //chart.legend.itemContainers.template.minWidth = undefined; // Remove minWidth to make it flexible
-            chart.legend.itemContainers.template.maxWidth = 180; // Limit max width for each item
+            waterChart.legend.itemContainers.template.maxWidth = 180; // Limit max width for each item
 
-            chart.logo.disabled = true;
+            waterChart.logo.disabled = true;
 
         });
     }
+    
 
-    pieChart1();
+disposeChartWater(pieChart1);
 
     async function lineChartMonthlyWater() {
-        try {
-            // Get the current date
+        am4core.ready(async function () {
+
             const today = new Date();
             const currentMonth = today.getMonth();
-
-            // Set startDate and endDate to the previous month
             const startDate = new Date(today.getFullYear(), currentMonth - 1, 1);
             const endDate = new Date(today.getFullYear(), currentMonth, 0);
 
             const startISO = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
             const endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
 
-
             const waters = ['domestic', 'flushing'];
             let waterValues = [];
 
-            // Fetch data for each scope
-            for (let water of waters) {
-                const response = await fetch(url + `/obix/histories/SqlServerDatabase/${water}/~historyQuery?start=${startISO}&end=${endISO}`);
-                console.log("water response " + response);
-                const text = await response.text();
+            // Fetch data asynchronously for each scope
+            for (let scope of waters) {
+                const urlToFetch = `${url}/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${startISO}T23:59:59.000+05:30&end=${endISO}T23:59:59.000+05:30`;
+                console.log(urlToFetch);
+                try {
+                    const response = await fetch(urlToFetch);
+                    console.log(response);
+                    if (!response.ok) {
+                        console.error(`Error fetching data for ${scope}: ${response.status} - ${response.statusText}`);
+                        continue;
+                    }
 
-                // Parse the XML data
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(text, "text/xml");
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(text, "text/xml");
+                    const objs = xmlDoc.getElementsByTagName("obj");
 
-                // Get all <obj> elements
-                const objs = xmlDoc.getElementsByTagName("obj");
+                    for (let i = 0; i < objs.length; i++) {
+                        const obj = objs[i];
+                        const abstime = obj.getElementsByTagName("abstime")[0];
+                        const real = obj.getElementsByTagName("real")[0];
 
-                // Process each <obj> element
-                for (let i = 0; i < objs.length; i++) {
-                    const obj = objs[i];
-                    const abstime = obj.getElementsByTagName("abstime")[0];
-                    const real = obj.getElementsByTagName("real")[0];
+                        if (abstime && real) {
+                            const dateText = abstime.getAttribute("val");
+                            const valueText = real.getAttribute("val");
 
-                    if (abstime && real) {
-                        const dateText = abstime.getAttribute("val");
-                        const valueText = real.getAttribute("val");
-
-                        if (valueText && dateText) {
-                            const value = parseFloat(valueText).toFixed(2); // Format to 2 decimal places
-                            const date = new Date(dateText);
-                            const dateStr = date.toDateString();  // Use toDateString to compare without time
-
-                            // Add the data for each scope
-                            const existingEntry = waterValues.find(entry => entry.date.toDateString() === dateStr);
-
-                            if (existingEntry) {
-                                existingEntry[water] = parseFloat(value); // Add the value to the existing entry for that date
-                            } else {
-                                waterValues.push({
-                                    date: date,
-                                    [water]: parseFloat(value) // Dynamically add the value for the scope
+                            if (valueText && dateText) {
+                                const value = parseFloat(valueText).toFixed(2);
+                                const date = new Date(dateText);
+                                const formattedDate = date.toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric"
                                 });
+                                const dateStr = date.toDateString();  // Use toDateString to compare without time
+
+                                const existingEntry = waterValues.find(entry => entry.date.toDateString() === dateStr);
+
+                                if (existingEntry) {
+                                    existingEntry[scope] = parseFloat(value);
+                                } else {
+                                    waterValues.push({
+                                        date: date,
+                                        [scope]: parseFloat(value)
+                                    });
+                                }
                             }
-                            console.log("water values monthly " + waterValues);
                         }
                     }
+                } catch (error) {
+                    console.error(`Error fetching data for ${scope}: ${error.message}`);
                 }
             }
 
-            // Destroy existing chart if it exists
-            if (window.chart) {
-                if (window.chart instanceof AmCharts.AmChart) {
-                    window.chart.clear(); // Clear the existing AmCharts instance
-                }
-            }
+            // Themes begin
+            am4core.useTheme(am4themes_animated);
+            // Themes end
 
-            // Create the line chart with the generated data for the previous month
-            window.chart = AmCharts.makeChart("chartdiv1", {
-                "type": "serial",
-                "theme": "white",
-                "color": "#000",
-                "legend": {
-                    "useGraphSettings": true,
-                    "color": "#000",
-                    "position": "top",
-                    "align": "center",
-                    "marginBottom": 10,
-                    "valueText": ""
-                },
-                "dataProvider": waterValues,
-                "synchronizeGrid": true,
-                "valueAxes": [{
-                    "id": "v1",
-                    "axisColor": "#000",
-                    "axisThickness": 0.5,
-                    "axisAlpha": 1,
-                    "position": "left"
-                }],
-                "graphs": [{
-                    "valueAxis": "v1",
-                    "lineColor": "#C65BCF",
-                    "bulletBorderThickness": 1,
-                    "hideBulletsCount": 30,
-                    "title": "Domestic Water",
-                    "valueField": "domestic",
-                    "fillAlphas": 0,
-                    "type": "smoothedLine",
-                    "balloonText": "<span style='font-size:13px;'>[[value]]</span>",  // Custom font size
-                    "balloon": {
-                        "adjustBorderColor": false,
-                        "color": "#000",  // Text color
-                        "fillColor": "#C65BCF",
-                        "borderColor": "#C65BCF"
-                    }
-                }, {
-                    "valueAxis": "v1",
-                    "lineColor": "#39A7FF",
-                    "bulletBorderThickness": 1,
-                    "hideBulletsCount": 30,
-                    "title": "Flushing Water",
-                    "valueField": "flushing",
-                    "fillAlphas": 0,
-                    "type": "smoothedLine",
-                    "balloonText": "<span style='font-size:13px;'>[[value]]</span>",  // Custom font size
-                    "balloon": {
-                        "adjustBorderColor": false,
-                        "color": "#000",  // Text color
-                        "fillColor": "#39A7FF",
-                        "borderColor": "#39A7FF"
-                    }
-                }],
-                "chartScrollbar": {
-                    "offset": 20
-                },
-                "chartCursor": {
-                    "cursorPosition": "mouse",
-                    "cursorColor": "#000000",
-                },
-                "categoryField": "date",
-                "categoryAxis": {
-                    "parseDates": true,
-                    "axisColor": "#000",
-                    "minorGridEnabled": true
-                },
-                "export": {
-                    "enabled": true // Enable export menu
-                }
+            // Create chart instance
+            waterChart = am4core.create("chartdiv1", am4charts.XYChart);
+            waterChart.paddingRight = 20;
+
+            // Add data
+            waterChart.data = waterValues;
+            waterValues.forEach(item => {
+                item.date = new Date(item.date).getTime();  // Convert to timestamp
+                console.log("item date (timestamp): " + item.date);
+
+                // Convert timestamp back to a readable date
+                const formattedDate = new Date(item.date).toLocaleDateString("en-US", {
+                    // year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                });
+                item.date = formattedDate;
+                console.log("Formatted item date: " + formattedDate);
             });
 
-            // Zoom to the last 70 data points
-            window.chart.addListener("dataUpdated", zoomChart);
-            zoomChart();
 
-            function zoomChart() {
-                window.chart.zoomToIndexes(window.chart.dataProvider.length - 70, window.chart.dataProvider.length - 1);
+            // Create axes
+            var categoryAxis = waterChart.xAxes.push(new am4charts.CategoryAxis());
+            categoryAxis.dataFields.category = "date"; // Use 'date' instead of 'year'
+            categoryAxis.renderer.minGridDistance = 80;
+            // categoryAxis.renderer.grid.template.location = 2;
+            // categoryAxis.startLocation = 1;
+            // categoryAxis.endLocation = 1.5;
+            categoryAxis.renderer.labels.template.horizontalCenter = "middle"; // Center labels
+            categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center labels
+
+            var valueAxis = waterChart.yAxes.push(new am4charts.ValueAxis());
+            valueAxis.baseValue = 0;
+
+            // Function to create series
+            function createSeries(valueField, name, color) {
+                var series = waterChart.series.push(new am4charts.LineSeries());
+                series.dataFields.valueY = valueField;
+                series.dataFields.categoryX = "date"; // Use 'date' instead of 'year'
+                series.name = name;
+                series.strokeWidth = 2;
+                series.tensionX = 0.77;
+                series.stroke = color;
+
+                // Bullet to display tooltips
+                var bullet = series.bullets.push(new am4charts.Bullet());
+                bullet.tooltipText = "{name}: {valueY}";
+
+                bullet.adapter.add("fill", function (fill, target) {
+                    // If the value is negative, color the bullet red, else use the series color
+                    if (target.dataItem.valueY < 0) {
+                        return am4core.color("#FF0000"); // Red for negative values
+                    }
+                    return series.stroke; // Use the series stroke color (the color passed to createSeries)
+                });
+
+                return series;
             }
+            
+            waterChart.legend = new am4charts.Legend();
+            waterChart.legend.position = "top";
+            waterChart.legend.paddingBottom = 10;
+            waterChart.legend.labels.template.maxWidth = 95;
+            // Create three series with different data fields and colors
+            createSeries("domestic", "Domestic", am4core.color("#C65BCF"));
+            createSeries("flushing", "Flushing", am4core.color("#39A7FF"));
 
-        } catch (error) {
-            console.error("Error fetching or processing the data:", error);
-        }
+            // Add scrollbar
+            // var scrollbarX = new am4charts.XYChartScrollbar();
+            // scrollbarX.series.push(chart.series.values[0]);  // Add the first series to the scrollbar
+            // chart.scrollbarX = scrollbarX;
+            // scrollbarX.height = 30;
+            waterChart.scrollbarX = new am4core.Scrollbar();
+            waterChart.scrollbarX.marginBottom = 20;
+
+            waterChart.cursor = new am4charts.XYCursor();
+            waterChart.logo.disabled = true;
+
+        });
     }
     // async function lineChartMonthlyWater() {
     //     try {
@@ -1003,315 +1103,310 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
     //         console.error("Error fetching or processing the data:", error);
     //     }
     // }
+    async function daterangeWater() {
+        am4core.ready(async function () {
 
+            var startDateValue = $("#startDateWater").val();
+            var endDateValue = $("#endDateWater").val();
+            const waters = ['domestic', 'flushing'];
+            let waterValues = [];
+            // const url = "https://localhost";
 
-    async function lineChart1() {
-        var startDateValue = $("#startDateWater").val();
-        var endDateValue = $("#endDateWater").val();
-
-        const waters = ['domestic', 'flushing'];
-        let waterValues = [];
-
-        // Fetch data for each scope
-        for (let water of waters) {
-            try {
-                const response = await fetch(url + `/obix/histories/SqlServerDatabase/${water}/~historyQuery?start=${startDateValue}&end=${endDateValue}`);
-                if (!response.ok) throw new Error(`Error fetching ${water} data`);
+            // Fetch data asynchronously for each scope
+            for (let scope of waters) {
+                const urlToFetch = `${url}/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${startDateValue}T23:59:59.000+05:30&end=${endDateValue}T23:59:59.000+05:30`;
+                console.log(urlToFetch);
+                try {
+                    const response = await fetch(urlToFetch);
+                    console.log(response);
+                    if (!response.ok) {
+                        console.error(`Error fetching data for ${scope}: ${response.status} - ${response.statusText}`);
+                        continue;
+                    }
 
                 const text = await response.text();
 
                 // Parse the XML data
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(text, "text/xml");
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(text, "text/xml");
+                    const objs = xmlDoc.getElementsByTagName("obj");
 
-                // Get all <obj> elements
-                const objs = xmlDoc.getElementsByTagName("obj");
+                    for (let i = 0; i < objs.length; i++) {
+                        const obj = objs[i];
+                        const abstime = obj.getElementsByTagName("abstime")[0];
+                        const real = obj.getElementsByTagName("real")[0];
 
-                // Process each <obj> element
-                for (let i = 0; i < objs.length; i++) {
-                    const obj = objs[i];
-                    const abstime = obj.getElementsByTagName("abstime")[0];
-                    const real = obj.getElementsByTagName("real")[0];
+                        if (abstime && real) {
+                            const dateText = abstime.getAttribute("val");
+                            const valueText = real.getAttribute("val");
 
-                    if (abstime && real) {
-                        const dateText = abstime.getAttribute("val");
-                        const valueText = real.getAttribute("val");
-
-                        if (valueText && dateText) {
-                            const value = parseFloat(valueText).toFixed(2); // Format to 2 decimal places
-                            const date = new Date(dateText);
-                            const dateStr = date.toISOString().split('T')[0]; // Standard date string
-
-                            // Add the data for each scope
-                            const existingEntry = waterValues.find(entry => entry.date === dateStr);
-
-                            if (existingEntry) {
-                                existingEntry[water] = parseFloat(value); // Add the value to the existing entry for that date
-                            } else {
-                                waterValues.push({
-                                    date: dateStr,
-                                    [water]: parseFloat(value) // Dynamically add the value for the scope
+                            if (valueText && dateText) {
+                                const value = parseFloat(valueText).toFixed(2);
+                                const date = new Date(dateText);
+                                const formattedDate = date.toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric"
                                 });
+                                const dateStr = date.toDateString();  // Use toDateString to compare without time
+
+                                const existingEntry = waterValues.find(entry => entry.date.toDateString() === dateStr);
+
+                                if (existingEntry) {
+                                    existingEntry[scope] = parseFloat(value);
+                                } else {
+                                    waterValues.push({
+                                        date: date,
+                                        [scope]: parseFloat(value)
+                                    });
+                                }
                             }
                         }
                     }
-                }
-            } catch (error) {
-                console.error(`Error fetching or parsing data for ${water}:`, error);
-                return; // Exit if there's an error
-            }
-        }
-
-        // Check if there’s data to display
-        if (waterValues.length === 0) {
-            alert('No data available for the selected range');
-            return;
-        }
-
-        if (startDateValue && endDateValue) {
-            var startDate = new Date(startDateValue);
-            var endDate = new Date(endDateValue);
-
-            // Validate date range
-            if (!await validateDateRange(startDate, endDate)) {
-                return; // Exit if validation fails
-            }
-
-            // Dispose of any existing chart instance
-            if (chart && chart.dispose instanceof Function) {
-                chart.dispose();
-            }
-
-            // Create the chart
-            chart = AmCharts.makeChart('chartdiv1', {
-                "type": "serial",
-                "theme": "white",
-                "color": "#000",
-                "legend": {
-                    "useGraphSettings": true,
-                    "color": "#000",
-                    "position": "top",
-                    "align": "center",
-                    "marginBottom": 0,
-                    "valueText": ""
-                },
-                "dataProvider": waterValues,
-                "synchronizeGrid": true,
-                "valueAxes": [{
-                    "id": "v1",
-                    "axisColor": "#000",
-                    "axisThickness": 1,
-                    "axisAlpha": 1,
-                    "position": "left"
-                }],
-                "graphs": [{
-                    "valueAxis": "v1",
-                    "lineColor": "#C65BCF",
-                    "bulletBorderThickness": 1,
-                    "hideBulletsCount": 30,
-                    "title": "Domestic Water",
-                    "valueField": "domestic",
-                    "fillAlphas": 0,
-                    "type": "smoothedLine",
-                    "balloonText": "<span style='font-size:13px;'>[[value]]</span>",
-                    "balloon": {
-                        "adjustBorderColor": false,
-                        "color": "#000",
-                        "fillColor": "#C65BCF",
-                        "borderColor": "#C65BCF"
-                    }
-                }, {
-                    "valueAxis": "v1",
-                    "lineColor": "#39A7FF",
-                    "bulletBorderThickness": 1,
-                    "hideBulletsCount": 30,
-                    "title": "Flushing Water",
-                    "valueField": "flushing",
-                    "fillAlphas": 0,
-                    "type": "smoothedLine",
-                    "balloonText": "<span style='font-size:13px;'>[[value]]</span>",
-                    "balloon": {
-                        "adjustBorderColor": false,
-                        "color": "#000",
-                        "fillColor": "#39A7FF",
-                        "borderColor": "#39A7FF"
-                    }
-                }],
-                "chartScrollbar": {
-                    "selectedGraphLineColor": "#888",
-                    "position": "bottom",
-                    "offset": 20
-                },
-                "chartCursor": {
-                    "cursorPosition": "mouse",
-                    "cursorColor": "#000000"
-                },
-                "categoryField": "date",
-                "categoryAxis": {
-                    "parseDates": true,
-                    "axisColor": "#000",
-                    "minorGridEnabled": true,
-                    "dateFormats": [
-                        { "period": "DD", "format": "MMM DD" },
-                        { "period": "WW", "format": "MMM DD" },
-                        { "period": "MM", "format": "MMM YYYY" },
-                        { "period": "YYYY", "format": "YYYY" }
-                    ]
-                },
-                "export": {
-                    "enabled": true,
-                    "position": "bottom-right"
-                },
-                "zoomControl": {
-                    "zoomControlEnabled": false
-                },
-                "responsive": {
-                    "enabled": true
-                }
-            });
-
-            chart.addListener("dataUpdated", zoomChart);
-            zoomChart();
-
-            function zoomChart() {
-                chart.zoomToIndexes(chart.dataProvider.length - 70, chart.dataProvider.length - 1);
-            }
-        }
-    }
-
-    async function showClusteredBarChart1() {
-        const domesticWater = [];
-        const flushingwater = [];
-        const last12Months = getLast12Months1();
-
-        for (const month of last12Months) {
-            const scopeUrls = [
-                `${url}/obix/histories/SqlServerDatabase/domesticWater/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&limit=1`,
-                `${url}/obix/histories/SqlServerDatabase/flushingWater/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&limit=1`
-            ];
-
-            for (let i = 0; i < scopeUrls.length; i++) {
-                try {
-                    const response = await fetch(scopeUrls[i]);
-                    const text = await response.text();
-                    const parser = new DOMParser();
-                    const xml = parser.parseFromString(text, "application/xml");
-
-                    const records = xml.getElementsByTagName("obj");
-                    for (let j = 0; j < records.length; j++) {
-                        const timestamp = records[j].getElementsByTagName("abstime")[0]?.getAttribute("val");
-                        const value = records[j].getElementsByTagName("real")[0]?.getAttribute("val");
-                        if (!timestamp || !value) continue;
-
-                        const date = new Date(timestamp);
-                        const month = date.toLocaleString('default', { month: 'long' });
-                        const year = date.getFullYear();
-                        const formattedMonth = `${month} ${year}`;
-
-                        // Push the data to the respective scope arrays
-                        if (i === 0) domesticWater.push(parseFloat(value));
-                        else if (i === 1) flushingwater.push(parseFloat(value));
-                    }
                 } catch (error) {
-                    console.error("Error fetching data for scope", i, ":", error);
+                    console.error(`Error fetching data for ${scope}: ${error.message}`);
                 }
             }
-        }
 
-
-        am4core.ready(function () {
             // Themes begin
             am4core.useTheme(am4themes_animated);
             // Themes end
 
-            var chart = am4core.create('chartdiv1', am4charts.XYChart);
+            // Create chart instance
+            var emissionChart = am4core.create("chartdiv1", am4charts.XYChart);
+            emissionChart.paddingRight = 20;
 
-            chart.padding(0, 0, 0, 0);
-            chart.colors.step = 2;
+            // Add data
+            emissionChart.data = waterValues;
+            waterValues.forEach(item => {
+                item.date = new Date(item.date).getTime();  // Convert to timestamp
+                console.log("item date (timestamp): " + item.date);
 
-            chart.legend = new am4charts.Legend();
-            chart.legend.position = 'top';
-            chart.legend.paddingBottom = 20;
-            chart.legend.labels.template.maxWidth = 95;
-            chart.legend.labels.template.fill = am4core.color('#000000');
+                // Convert timestamp back to a readable date
+                const formattedDate = new Date(item.date).toLocaleDateString("en-US", {
+                    // year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                });
+                item.date = formattedDate;
+                console.log("Formatted item date: " + formattedDate);
+            });
 
-            var xAxis = chart.xAxes.push(new am4charts.CategoryAxis());
-            xAxis.dataFields.category = 'category';
-            xAxis.renderer.cellStartLocation = 0.2;
-            xAxis.renderer.cellEndLocation = 0.8;
-            xAxis.renderer.grid.template.location = 0;
-            xAxis.renderer.labels.template.fill = am4core.color('#000000');
-            xAxis.renderer.minGridDistance = 20;
-            xAxis.renderer.labels.template.rotation = 315;
-            xAxis.renderer.labels.template.horizontalCenter = "right"; // Align to right
-            xAxis.renderer.labels.template.verticalCenter = "middle"; // Center vertically
-            xAxis.renderer.labels.template.dy = -15;
-            xAxis.renderer.labels.template.fontSize = 10;
-            xAxis.renderer.labels.template.dx = 5;
 
-            var yAxis = chart.yAxes.push(new am4charts.ValueAxis());
-            yAxis.min = 0;
-            yAxis.renderer.labels.template.fill = am4core.color('#000000');
+            // Create axes
+            var categoryAxis = emissionChart.xAxes.push(new am4charts.CategoryAxis());
+            categoryAxis.dataFields.category = "date"; // Use 'date' instead of 'year'
+            categoryAxis.renderer.minGridDistance = 80;
+            // categoryAxis.renderer.grid.template.location = 2;
+            // categoryAxis.startLocation = 1;
+            // categoryAxis.endLocation = 1.5;
+            categoryAxis.renderer.labels.template.horizontalCenter = "middle"; // Center labels
+            categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center labels
 
-            // Create stacked series
-            function createSeries(value, name, color) {
-                var series = chart.series.push(new am4charts.ColumnSeries());
-                series.dataFields.valueY = value;
-                series.dataFields.categoryX = "category";
+            var valueAxis = emissionChart.yAxes.push(new am4charts.ValueAxis());
+            valueAxis.baseValue = 0;
+
+            // Function to create series
+            function createSeries(valueField, name, color) {
+                var series = emissionChart.series.push(new am4charts.LineSeries());
+                series.dataFields.valueY = valueField;
+                series.dataFields.categoryX = "date"; // Use 'date' instead of 'year'
                 series.name = name;
+                series.strokeWidth = 2;
+                series.tensionX = 0.77;
+                series.stroke = color;
 
-                series.columns.template.fill = am4core.color(color);  // Fill color
-                series.columns.template.stroke = am4core.color(color); // Stroke color
+                // Bullet to display tooltips
+                var bullet = series.bullets.push(new am4charts.Bullet());
+                bullet.tooltipText = "{name}: {valueY} ";
 
-                // Customize tooltip
-                series.tooltipText = '{name}: {valueY}';
-                series.tooltip.background.fill = am4core.color(color); // Set tooltip background color to match series color
-                series.tooltip.label.fill = am4core.color('#ffffff'); // Tooltip text color
-                series.tooltip.pointerOrientation = 'vertical'; // Tooltip orientation
-                series.tooltip.getFillFromObject = false; // Ensure tooltip color is set explicitly
-                series.tooltip.getStrokeFromObject = false; // Ensure tooltip border color is set explicitly
-
-                series.stacked = true;  // Enable stacking
+                bullet.adapter.add("fill", function (fill, target) {
+                    // If the value is negative, color the bullet red, else use the series color
+                    if (target.dataItem.valueY < 0) {
+                        return am4core.color("#FF0000"); // Red for negative values
+                    }
+                    return series.stroke; // Use the series stroke color (the color passed to createSeries)
+                });
 
                 return series;
             }
+            emissionChart.legend = new am4charts.Legend();
+            emissionChart.legend.position = "top";
+            emissionChart.legend.paddingBottom = 10;
+            emissionChart.legend.labels.template.maxWidth = 95;
+            // Create three series with different data fields and colors
+            createSeries("domestic", "Domestic", am4core.color("#C65BCF"));
+            createSeries("flushing", "Flushing", am4core.color("#39A7FF"));
 
-            // Generate the chart data using scope1Data and scope2Data for the last 12 months
-            chart.data = last12Months.map((month, index) => ({
-                category: month.startDate.substring(0, 7),   // Extracting the year-month part as a string (e.g., '2023-11')
-                scope1: scope1Data[index],
-                scope2: scope2Data[index]
-            }));
+            // Add scrollbar
+            // var scrollbarX = new am4charts.XYChartScrollbar();
+            // scrollbarX.series.push(chart.series.values[0]);  // Add the first series to the scrollbar
+            // chart.scrollbarX = scrollbarX;
+            // scrollbarX.height = 30;
+            emissionChart.scrollbarX = new am4core.Scrollbar();
+            emissionChart.scrollbarX.marginBottom = 20;
 
-            // Create series for Scope 1 and Scope 2 data
-            createSeries('scope1', 'Scope 1', '#C65BCF'); // Scope 1 data
-            createSeries('scope2', 'Scope 2', '#39A7FF'); // Scope 2 data
+            emissionChart.cursor = new am4charts.XYCursor();
+            emissionChart.logo.disabled = true;
 
-            // Add total value at the top of each bar for the last series only
-            chart.events.on("datavalidated", function () {
-                var lastSeries = chart.series.getIndex(chart.series.length - 1); // Get the last series in the stack
-                lastSeries.columns.each(function (column) {
-                    var total = 0;
+        });
+    }
 
-                    // Loop through all stacked series to calculate the total
-                    chart.series.each(function (stackedSeries) {
-                        total += stackedSeries.dataItems.getIndex(column.dataItem.index).valueY;
-                    });
+    async function showClusteredBarChart1() {
+        const domesticWater = [];
+        const flushingWater = [];
+        const last12Months = getLast12Months1();
+        console.log(last12Months);
+        const previousMonths = getLast12Months(); 
+        console.log(previousMonths);
+for (const month of last12Months) {
+    const scopeUrls = [
+        `${url}/obix/histories/SqlServerDatabase/domesticYearly/~historyQuery?start=${month.startDate}T23:59:59.000+05:30&limit=1`,
+        `${url}/obix/histories/SqlServerDatabase/flushingYearly/~historyQuery?start=${month.startDate}T23:59:59.000+05:30&limit=1`
+    ];
 
-                    // Add a label at the top of the stack (for the last series only)
-                    var label = column.createChild(am4core.Label);
-                    label.text = total.toString();
-                    label.fill = am4core.color('#000000'); // Label color
-                    label.fontSize = 12;
-                    label.dy = -20; // Position above the bar
-                    label.align = "center";
-                });
+    for (let i = 0; i < scopeUrls.length; i++) {
+        try {
+            const response = await fetch(scopeUrls[i]);
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    
+            const text = await response.text();
+            const parser = new DOMParser();
+            const xml = parser.parseFromString(text, "application/xml");
+    
+            const records = xml.getElementsByTagName("list");
+            for (let record of records) {
+                // Fetch `abstime` and `real` values
+                const abstime = record.getElementsByTagName("abstime")[0]?.getAttribute("val");
+                const realValue = record.getElementsByTagName("real")[0]?.getAttribute("val");
+    
+                // Match the `abstime` with the corresponding `month.startDate`
+                if (abstime && realValue) {
+                    const abstimeDate = new Date(abstime);
+                    const formattedAbstime = `${abstimeDate.getFullYear()}-${String(abstimeDate.getMonth() + 1).padStart(2, '0')}-${String(abstimeDate.getDate()).padStart(2, '0')}`;
+                    
+                    if (formattedAbstime === month.startDate) {
+                        if (i === 0) {
+                            domesticWater.push(parseFloat(realValue).toFixed(1));
+                        } else if (i === 1) {
+                            flushingWater.push(parseFloat(realValue).toFixed(1));
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`Error fetching data for scope ${i + 1}:`, error);
+            if (i === 0) {
+                domesticWater.push(null); // Push null to maintain alignment
+            } else if (i === 1) {
+                flushingWater.push(null); // Push null to maintain alignment
+            }
+        }
+    }            
+}
+
+am4core.ready(function () {
+    // Themes begin
+    am4core.useTheme(am4themes_animated);
+    // Themes end
+
+    // Create the chart
+    let waterChart = am4core.create('chartdiv1', am4charts.XYChart);
+
+    waterChart.padding(0, 0, 0, 0);
+    waterChart.colors.step = 2;
+
+    // Legend configuration
+    waterChart.legend = new am4charts.Legend();
+    waterChart.legend.position = 'top';
+    waterChart.legend.paddingBottom = 20;
+    waterChart.legend.labels.template.maxWidth = 95;
+    waterChart.legend.labels.template.fill = am4core.color('#000000');
+
+    // X-axis configuration
+    var xAxis = waterChart.xAxes.push(new am4charts.CategoryAxis());
+    xAxis.dataFields.category = 'category';
+    xAxis.renderer.cellStartLocation = 0.2;
+    xAxis.renderer.cellEndLocation = 0.8;
+    xAxis.renderer.grid.template.location = 0;
+    xAxis.renderer.labels.template.fill = am4core.color('#000000');
+    xAxis.renderer.minGridDistance = 20;
+    xAxis.renderer.labels.template.rotation = 315;
+    xAxis.renderer.labels.template.horizontalCenter = "right"; // Align to right
+    xAxis.renderer.labels.template.verticalCenter = "middle"; // Center vertically
+    xAxis.renderer.labels.template.dy = -15;
+    xAxis.renderer.labels.template.fontSize = 10;
+    xAxis.renderer.labels.template.dx = 5;
+
+    // Y-axis configuration
+    const maxDomesticWater = Math.max(...domesticWater);
+const maxFlushingWater = Math.max(...flushingWater);
+    const maxValue = Math.max(maxDomesticWater, maxFlushingWater);
+    const yAxisMaxValue = Math.ceil(maxValue * 2);
+    var yAxis = waterChart.yAxes.push(new am4charts.ValueAxis());
+    yAxis.min = 0;
+    yAxis.max = yAxisMaxValue;
+    yAxis.renderer.labels.template.fill = am4core.color('#000000');
+    // Create series function
+    function createSeries(value, name, color) {
+        var series = waterChart.series.push(new am4charts.ColumnSeries());
+        series.dataFields.valueY = value;
+        series.dataFields.categoryX = "category";
+        series.name = name;
+
+        series.columns.template.fill = am4core.color(color);  // Fill color
+        series.columns.template.stroke = am4core.color(color); // Stroke color
+
+        // Customize tooltip
+        series.tooltipText = '{name}: {valueY}';
+        series.tooltip.background.fill = am4core.color(color); // Set tooltip background color to match series color
+        series.tooltip.label.fill = am4core.color('#ffffff'); // Tooltip text color
+        series.tooltip.pointerOrientation = 'vertical'; // Tooltip orientation
+        series.tooltip.getFillFromObject = false; // Ensure tooltip color is set explicitly
+        series.tooltip.getStrokeFromObject = false; // Ensure tooltip border color is set explicitly
+
+        series.stacked = true;  // Enable stacking
+
+        return series;
+    }
+
+    // Generate the chart data using domesticWater and flushingWater for the last 12 months
+    waterChart.data = previousMonths.map((month, index) => ({
+        category: month,
+        domesticYearly: domesticWater[index] || 0, // Fallback to 0 if no data
+        flushingYearly: flushingWater[index] || 0  // Fallback to 0 if no data
+    }));
+
+    // Create series for Scope 1 and Scope 2 data
+    createSeries('domesticYearly', 'Domestic', '#C65BCF'); // Scope 1 data
+    createSeries('flushingYearly', 'Flushing', '#39A7FF'); // Scope 2 data
+
+    // Add total value at the top of each bar for the last series only
+    waterChart.events.on("datavalidated", function () {
+        const lastSeries = waterChart.series.getIndex(waterChart.series.length - 1); // Get the last series in the stack
+        lastSeries.columns.each(function (column) {
+            let total = 0;
+
+            // Loop through all stacked series to calculate the total
+            waterChart.series.each(function (stackedSeries) {
+                total += stackedSeries.dataItems.getIndex(column.dataItem.index)?.valueY || 0; // Safeguard null values
             });
 
-            var cursor = new am4charts.XYCursor();
-            chart.cursor = cursor;
-            chart.logo.disabled = true;
-        }); // end am4core.ready()
+            // Add a label at the top of the stack (for the last series only)
+            const label = column.createChild(am4core.Label);
+            label.text = total.toFixed(1); // Format the total to 2 decimal places
+            label.fill = am4core.color('#000000'); // Label color
+            label.fontSize = 12;
+            label.dy = -20; // Position above the bar
+            label.align = "center";
+        });
+    });
+
+    // Configure cursor
+    var cursor = new am4charts.XYCursor();
+    waterChart.cursor = cursor;
+    waterChart.logo.disabled = true;
+});
+ // end am4core.ready()
     }
 
 
@@ -1319,109 +1414,460 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
 
 
     $("#startDateWater, #endDateWater").on("change", async function () {
-        clearDateInputs();
-        await lineChart1();
+        // clearDateInputs();
+        await disposeChartWater(daterangeWater);
     });
 
     $("#sav_monthly_water").on("click", async function () {
         clearDateInputsWater();
-        await lineChartMonthlyWater();
+        await disposeChartWater(lineChartMonthlyWater);
     });
 
     $("#sav_daily_water").on("click", async function () {
         clearDateInputsWater();
-        await pieChart1();
+        await disposeChartWater(pieChart1);
     });
 
     $("#sav_yearly_water").on("click", async function () {
         clearDateInputsWater();
-        await showClusteredBarChart1();
+        await disposeChartWater(showClusteredBarChart1);
     });
     /* water consumption end */
 
     /* power consumption start */
     let powerChart;
+    async function disposeChartPower(newChartFunction) {
+        // Destroy the existing chart if it exists
+            if (powerChart) {
+                if (powerChart instanceof ApexCharts) {
+                    powerChart.destroy(); // Dispose the existing chart
+                } else {
+                    powerChart.dispose(); // Dispose the existing am4charts instance
+                }
+            }
+        await newChartFunction();
+    }
+    
+    async function lineChart4() {
+        let currentDate = new Date();
+        currentDate.setDate(currentDate.getDate());
 
-    async function lineChart3() {
-        //   // Dispose of existing chart if it exists
-        if (powerChart) {
-            if (powerChart instanceof ApexCharts) {
-                console.log("Chart destroyed");
-                powerChart.destroy(); // Dispose the existing chart
-            } else if (powerChart instanceof AmCharts.AmChart) {
-                console.log("Chart destroyed");
-                powerChart.clear(); // Clear the existing AmCharts instance
-            } else if (powerChart instanceof am4charts.XYChart) {
-                console.log("Chart destroyed");
-                powerChart.dispose(); // Dispose the existing am4charts instance
+        // Format the date (optional)
+        let previousDate = currentDate.toISOString().split('T')[0];
+        //console.log("previos day " + previousDate);
+        const response = await fetch(`${url}/obix/histories/SqlServerDatabase/powerDaily/~historyQuery?start=${previousDate}T00:00:00.000+05:30&end=${previousDate}T22:00:00.000+05:30`);
+        //console.log(response);
+        const text = await response.text();
+
+        // Parse the XML data
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(text, "text/xml");
+
+        // Get all <obj> elements that contain timestamp and value
+        const objElements = xmlDoc.getElementsByTagName("obj");
+
+        // Initialize arrays to store time and value
+        let times = [];
+        let values = [];
+
+        // Iterate through the <obj> elements to extract the time and value
+        for (let i = 1; i < objElements.length; i++) {
+            const obj = objElements[i];
+
+            const timestampElement = obj.getElementsByTagName("abstime")[0];
+            const valueElement = obj.getElementsByTagName("real")[0];
+
+            // Check if both timestamp and value exist and are not null
+            if (timestampElement && valueElement) {
+                const timestamp = timestampElement.getAttribute("val");
+                const value = valueElement.getAttribute("val");
+
+                if (timestamp && value) {
+                    // Extract only the time (HH:mm) from the timestamp
+                    const time = timestamp.split("T")[1]?.split(":").slice(0, 2).join(":");
+
+                    // Ensure time is valid and add to arrays
+                    if (time) {
+                        times.push(time);
+                        values.push(parseFloat(value));
+                    }
+                }
             }
         }
+        am4core.ready(function () {
+            // Themes begin
+            am4core.useTheme(am4themes_animated);
+            // Themes end
 
-        //   am4core.ready(function () {
-        //       // Themes begin
-        //       am4core.useTheme(am4themes_animated);
-        //       // Themes end
+            // Create chart instance
+            powerChart = am4core.create("chartdiv2", am4charts.XYChart);
+            
+            // Prepare data array based on extracted times and values
+            powerChart.data = times.map((time, index) => ({
+                "time": time, // Time in HH:mm format
+                "value": values[index] // Corresponding value
+            }));
 
-        //       // Create chart instance
-        //       powerChart = am4core.create("chartdiv2", am4charts.XYChart);
+            // Create axes
+            var categoryAxis = powerChart.xAxes.push(new am4charts.CategoryAxis());
+            categoryAxis.dataFields.category = "time";
+            categoryAxis.renderer.labels.template.fill = am4core.color("#000000"); // Set x-axis labels color
+            categoryAxis.title.fill = am4core.color("#000000"); // Set x-axis title color
+            categoryAxis.renderer.labels.template.rotation = 315; // Set rotation
+            categoryAxis.renderer.labels.template.horizontalCenter = "right"; // Align to the right
+            categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center vertically
+            categoryAxis.renderer.minGridDistance = 1; // Ensure all categories are displayed
+             categoryAxis.renderer.labels.template.dy = -15;
+             categoryAxis.renderer.labels.template.fontSize = 10;
+           categoryAxis.renderer.labels.template.dx = 10;
 
-        //       // Add data (use getRandomData for dynamic values and getLast12Months for x-axis categories)
-        //       const months = getLast12Months(); // Get the last 12 months
-        //       const randomData = getRandomData(); // Generate random data for each month
+            var valueAxis = powerChart.yAxes.push(new am4charts.ValueAxis());
+            valueAxis.renderer.labels.template.fill = am4core.color("#000000"); // Set y-axis labels color
+            valueAxis.title.fill = am4core.color("#000000"); // Set y-axis title color
 
-        //       // Prepare data array based on generated months and data
-        //       powerChart.data = months.map((month, index) => ({
-        //           "month": month, // Month name
-        //           "value": randomData[index] // Corresponding random value
-        //       }));
+            // Create series
+            var lineSeries = powerChart.series.push(new am4charts.LineSeries());
+            lineSeries.dataFields.valueY = "value";
+            lineSeries.dataFields.categoryX = "time";
+            lineSeries.strokeWidth = 2;
+            lineSeries.stroke = am4core.color("#FC4100");
 
-        //       // Create axes
-        //       var categoryAxis = powerChart.xAxes.push(new am4charts.CategoryAxis());
-        //       categoryAxis.dataFields.category = "month";
-        //       categoryAxis.renderer.labels.template.fill = am4core.color("#000000"); // Set x-axis labels color
-        //       categoryAxis.title.fill = am4core.color("#000000"); // Set x-axis title color
-        //       categoryAxis.renderer.labels.template.rotation = 315; // Set rotation
-        //       categoryAxis.renderer.labels.template.horizontalCenter = "right"; // Align to the right
-        //       categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center vertically
-        //       categoryAxis.renderer.minGridDistance = 1; // Ensure all categories are displayed
-        //       categoryAxis.renderer.labels.template.dy = -15;
-        //       categoryAxis.renderer.labels.template.fontSize = 10;
-        //       categoryAxis.renderer.labels.template.dx = 10;
+            // Add circle bullet
+            // var bullet = lineSeries.bullets.push(new am4charts.CircleBullet());
+            // bullet.circle.radius = 3; // Size of the bullet point
+            // bullet.circle.strokeWidth = 0.5;
+            // bullet.circle.fill = am4core.color("#fc030b"); // Bullet fill color
+            // bullet.circle.stroke = am4core.color("#FC4100"); // Bullet stroke color
 
-        //       var valueAxis = powerChart.yAxes.push(new am4charts.ValueAxis());
-        //       valueAxis.renderer.labels.template.fill = am4core.color("#000000"); // Set y-axis labels color
-        //       valueAxis.title.fill = am4core.color("#000000"); // Set y-axis title color
+            // // Set the bullet's color to match the line's color
+            // bullet.adapter.add("fill", function (fill, target) {
+            //     return target.stroke;
+            // });
 
-        //       // Create series
-        //       var lineSeries = powerChart.series.push(new am4charts.LineSeries());
-        //       lineSeries.dataFields.valueY = "value";
-        //       lineSeries.dataFields.categoryX = "month";
-        //       lineSeries.strokeWidth = 2;
-        //       lineSeries.stroke = am4core.color("#14C38E");
+            // Configure cursor
+            var cursor = new am4charts.XYCursor();
+            lineSeries.tooltipText = "Power: [bold]{valueY}[/]";
+            lineSeries.tooltip.getFillFromObject = false; // Disable tooltip fill from series
+            lineSeries.tooltip.background.fill = am4core.color("#FC4100"); // Set tooltip background color
+            lineSeries.tooltip.label.fill = am4core.color("#ffffff"); // Set tooltip label color
+            lineSeries.tooltip.pointerOrientation = "horizontal"; // Set tooltip orientation
 
-        //       // Add circle bullet
-        //       var bullet = lineSeries.bullets.push(new am4charts.CircleBullet());
-        //       bullet.circle.radius = 3; // Size of the bullet point
-        //       bullet.circle.strokeWidth = 0.5;
-        //       bullet.circle.fill = am4core.color("#fc030b"); // Bullet fill color
-        //       bullet.circle.stroke = am4core.color("#14C38E"); // Bullet stroke color
+            // Enable zooming and panning
+            powerChart.scrollbarX = new am4core.Scrollbar();
+            powerChart.scrollbarX.disabled = true; // Disable scrollbar (we don't need it)
+            powerChart.zoomOutButton.disabled = false; // Allow the user to zoom out using a button
 
-        //       // Set the bullet's color to match the line's color
-        //       bullet.adapter.add("fill", function (fill, target) {
-        //           return target.stroke;
-        //       });
+            // Enable zooming on both axes
+            powerChart.xAxes.getIndex(0).renderer.minGridDistance = 50; // Optional: increase this to reduce the zoom level
+            powerChart.cursor = new am4charts.XYCursor();
+            powerChart.cursor.behavior = "zoomXY"; // Enable zoom on both axes
 
-        //       // Configure cursor
-        //       var cursor = new am4charts.XYCursor();
-        //       lineSeries.tooltipText = "{categoryX}: [bold]{valueY}[/]";
-        //       lineSeries.tooltip.getFillFromObject = false; // Disable tooltip fill from series
-        //       lineSeries.tooltip.background.fill = am4core.color("#14C38E"); // Set tooltip background color
-        //       lineSeries.tooltip.label.fill = am4core.color("#ffffff"); // Set tooltip label color
-        //       lineSeries.tooltip.pointerOrientation = "horizontal"; // Set tooltip orientation
+            powerChart.cursor = cursor; // Assign cursor to chart
+            powerChart.logo.disabled = true;
+        }); // end am4core.ready()
+    }
 
-        //       powerChart.cursor = cursor; // Assign cursor to chart
-        //       powerChart.logo.disabled = true;
-        //   }); // end am4core.ready()
+    disposeChartPower(lineChart4);
+
+    async function barChart() {
+        am4core.ready(async function () {
+
+            var startDateValue = $("#startDatePower").val();
+            var endDateValue = $("#endDatePower").val();
+            let waterValues = [];
+            // const url = "https://localhost";
+
+            // Fetch data asynchronously for each scope
+            
+                const urlToFetch = `${url}/obix/histories/SqlServerDatabase/domestic/~historyQuery?start=${startDateValue}T23:59:59.000+05:30&end=${endDateValue}T23:59:59.000+05:30`;
+                console.log(urlToFetch);
+                try {
+                    const response = await fetch(urlToFetch);
+                    console.log(response);
+
+                const text = await response.text();
+
+                // Parse the XML data
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(text, "text/xml");
+                    const objs = xmlDoc.getElementsByTagName("obj");
+
+                    for (let i = 0; i < objs.length; i++) {
+                        const obj = objs[i];
+                        const abstime = obj.getElementsByTagName("abstime")[0];
+                        const real = obj.getElementsByTagName("real")[0];
+
+                        if (abstime && real) {
+                            const dateText = abstime.getAttribute("val");
+                            const valueText = real.getAttribute("val");
+
+                            if (valueText && dateText) {
+                                const value = parseFloat(valueText).toFixed(2);
+                                const date = new Date(dateText);
+                                const formattedDate = date.toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric"
+                                });
+                                const dateStr = date.toDateString();  // Use toDateString to compare without time
+
+                                const existingEntry = waterValues.find(entry => entry.date.toDateString() === dateStr);
+
+                                if (existingEntry) {
+                                    // Update the existing entry's value
+                                    existingEntry.value = parseFloat(value);
+                                } else {
+                                    // Add a new entry with date and value
+                                    waterValues.push({
+                                        date: date,
+                                        value: parseFloat(value)
+                                    });
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error fetching data for `);
+                }
+            
+
+            // Themes begin
+            am4core.useTheme(am4themes_animated);
+            // Themes end
+
+            // Create chart instance
+            powerChart = am4core.create("chartdiv2", am4charts.XYChart);
+            powerChart.paddingRight = 20;
+
+            // Add data
+            powerChart.data = waterValues;
+            console.log(powerChart.data);
+            waterValues.forEach(item => {
+                item.date = new Date(item.date).getTime();  // Convert to timestamp
+                console.log("item date (timestamp): " + item.date);
+
+                // Convert timestamp back to a readable date
+                const formattedDate = new Date(item.date).toLocaleDateString("en-US", {
+                    // year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                });
+                item.date = formattedDate;
+                console.log("Formatted item date: " + formattedDate);
+            });
+
+
+            // Create axes
+            var categoryAxis = powerChart.xAxes.push(new am4charts.CategoryAxis());
+            categoryAxis.dataFields.category = "date"; // Use 'date' instead of 'year'
+            categoryAxis.renderer.minGridDistance = 80;
+            // categoryAxis.renderer.grid.template.location = 2;
+            // categoryAxis.startLocation = 1;
+            // categoryAxis.endLocation = 1.5;
+            categoryAxis.renderer.labels.template.horizontalCenter = "middle"; // Center labels
+            categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center labels
+
+            var valueAxis = powerChart.yAxes.push(new am4charts.ValueAxis());
+            valueAxis.baseValue = 0;
+
+            // Function to create series
+            function createSeries(valueField, name, color) {
+                var series = powerChart.series.push(new am4charts.ColumnSeries());
+                series.dataFields.valueY = valueField;
+                series.dataFields.categoryX = "date"; // Use 'date' instead of 'year'
+                series.name = name;
+                //series.strokeWidth = 2;
+                series.tensionX = 0.77;
+                //series.stroke = color;
+
+                // Bullet to display tooltips
+                var bullet = series.bullets.push(new am4charts.Bullet());
+                bullet.tooltipText = "{valueY}";
+
+                bullet.adapter.add("fill", function (fill, target) {
+                    // If the value is negative, color the bullet red, else use the series color
+                    if (target.dataItem.valueY < 0) {
+                        return am4core.color("#FF0000"); // Red for negative values
+                    }
+                    return series.stroke; // Use the series stroke color (the color passed to createSeries)
+                });
+
+                return series;
+            }
+            powerChart.legend = new am4charts.Legend();
+            powerChart.legend.position = "top";
+            powerChart.legend.paddingBottom = 10;
+            powerChart.legend.labels.template.maxWidth = 95;
+            // Create three series with different data fields and colors
+            createSeries("value", "Power", am4core.color("#3AA6B9"));
+
+            // Add scrollbar
+            // var scrollbarX = new am4charts.XYChartScrollbar();
+            // scrollbarX.series.push(chart.series.values[0]);  // Add the first series to the scrollbar
+            // chart.scrollbarX = scrollbarX;
+            // scrollbarX.height = 30;
+            powerChart.scrollbarX = new am4core.Scrollbar();
+            powerChart.scrollbarX.marginBottom = 20;
+
+            powerChart.cursor = new am4charts.XYCursor();
+            powerChart.logo.disabled = true;
+
+        });
+    }
+
+    async function lineChartMonthlyPower() {
+        am4core.ready(async function () {
+            // Get the current date
+        const today = new Date();
+        const currentMonth = today.getMonth();
+
+        // Set startDate and endDate to the previous month
+        const startDate = new Date(today.getFullYear(), currentMonth - 1, 1);
+        const endDate = new Date(today.getFullYear(), currentMonth, 0);
+
+        const startISO = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+        const endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+            let waterValues = [];
+            // const url = "https://localhost";
+
+            // Fetch data asynchronously for each scope
+            
+                const urlToFetch = `${url}/obix/histories/SqlServerDatabase/domestic/~historyQuery?start=${startISO}T23:59:59.000+05:30&end=${endISO}T23:59:59.000+05:30`;
+                console.log(urlToFetch);
+                try {
+                    const response = await fetch(urlToFetch);
+                    console.log(response);
+
+                const text = await response.text();
+
+                // Parse the XML data
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(text, "text/xml");
+                    const objs = xmlDoc.getElementsByTagName("obj");
+
+                    for (let i = 0; i < objs.length; i++) {
+                        const obj = objs[i];
+                        const abstime = obj.getElementsByTagName("abstime")[0];
+                        const real = obj.getElementsByTagName("real")[0];
+
+                        if (abstime && real) {
+                            const dateText = abstime.getAttribute("val");
+                            const valueText = real.getAttribute("val");
+
+                            if (valueText && dateText) {
+                                const value = parseFloat(valueText).toFixed(2);
+                                const date = new Date(dateText);
+                                const formattedDate = date.toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric"
+                                });
+                                const dateStr = date.toDateString();  // Use toDateString to compare without time
+
+                                const existingEntry = waterValues.find(entry => entry.date.toDateString() === dateStr);
+
+                                if (existingEntry) {
+                                    // Update the existing entry's value
+                                    existingEntry.value = parseFloat(value);
+                                } else {
+                                    // Add a new entry with date and value
+                                    waterValues.push({
+                                        date: date,
+                                        value: parseFloat(value)
+                                    });
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error fetching data for `);
+                }
+            
+
+            // Themes begin
+            am4core.useTheme(am4themes_animated);
+            // Themes end
+
+            // Create chart instance
+            powerChart = am4core.create("chartdiv2", am4charts.XYChart);
+            powerChart.paddingRight = 20;
+
+            // Add data
+            powerChart.data = waterValues;
+            console.log(powerChart.data);
+            waterValues.forEach(item => {
+                item.date = new Date(item.date).getTime();  // Convert to timestamp
+                console.log("item date (timestamp): " + item.date);
+
+                // Convert timestamp back to a readable date
+                const formattedDate = new Date(item.date).toLocaleDateString("en-US", {
+                    // year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                });
+                item.date = formattedDate;
+                console.log("Formatted item date: " + formattedDate);
+            });
+
+
+            // Create axes
+            var categoryAxis = powerChart.xAxes.push(new am4charts.CategoryAxis());
+            categoryAxis.dataFields.category = "date"; // Use 'date' instead of 'year'
+            categoryAxis.renderer.minGridDistance = 80;
+            // categoryAxis.renderer.grid.template.location = 2;
+            // categoryAxis.startLocation = 1;
+            // categoryAxis.endLocation = 1.5;
+            categoryAxis.renderer.labels.template.horizontalCenter = "middle"; // Center labels
+            categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center labels
+
+            var valueAxis = powerChart.yAxes.push(new am4charts.ValueAxis());
+            valueAxis.baseValue = 0;
+
+            // Function to create series
+            function createSeries(valueField, name, color) {
+                var series = powerChart.series.push(new am4charts.LineSeries());
+                series.dataFields.valueY = valueField;
+                series.dataFields.categoryX = "date"; // Use 'date' instead of 'year'
+                series.name = name;
+                series.strokeWidth = 2;
+                series.tensionX = 0.77;
+                series.stroke = color;
+
+                // Bullet to display tooltips
+                var bullet = series.bullets.push(new am4charts.Bullet());
+                bullet.tooltipText = "{valueY}";
+
+                bullet.adapter.add("fill", function (fill, target) {
+                    // If the value is negative, color the bullet red, else use the series color
+                    if (target.dataItem.valueY < 0) {
+                        return am4core.color("#FF0000"); // Red for negative values
+                    }
+                    return series.stroke; // Use the series stroke color (the color passed to createSeries)
+                });
+
+                return series;
+            }
+            powerChart.legend = new am4charts.Legend();
+            powerChart.legend.position = "top";
+            powerChart.legend.paddingBottom = 10;
+            powerChart.legend.labels.template.maxWidth = 95;
+            // Create three series with different data fields and colors
+            createSeries("value", "Power", am4core.color("#3AA6B9"));
+
+            // Add scrollbar
+            // var scrollbarX = new am4charts.XYChartScrollbar();
+            // scrollbarX.series.push(chart.series.values[0]);  // Add the first series to the scrollbar
+            // chart.scrollbarX = scrollbarX;
+            // scrollbarX.height = 30;
+            powerChart.scrollbarX = new am4core.Scrollbar();
+            powerChart.scrollbarX.marginBottom = 20;
+
+            powerChart.cursor = new am4charts.XYCursor();
+            powerChart.logo.disabled = true;
+
+        });
+
+    }
+
+    async function lineChart3() {
 
         am4core.ready(async function () {
             // Themes begin
@@ -1430,6 +1876,7 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
 
             // Create chart instance
             var powerChart = am4core.create("chartdiv2", am4charts.XYChart);
+            powerChart.logo.disabled = true;
 
             // Fetch month names for last 12 months using the getLast12Months() function
             const last12Months = getLast12Months1(); // Assuming this returns an array with month data for the URLs
@@ -1437,7 +1884,7 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
 
             // Define the URLs for each month
             const urls = last12Months.map(month => {
-                return `https://localhost/obix/histories/SqlServerDatabase/MonthlyHistory2324/~historyQuery?start=${month.startDate}T00:00:00.000+05:30&limit=1`;
+                return `https://localhost/obix/histories/SqlServerDatabase/domesticYearly/~historyQuery?start=${month.startDate}T23:59:59.000+05:30&limit=1`;
             });
             // console.log("URLs to fetch data from:", urls);  // Log the generated URLs
 
@@ -1446,7 +1893,6 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
 
             // Loop through the URLs asynchronously using a for loop
             for (const [index, scopeUrl] of urls.entries()) {
-                try {
                     // Fetch data using async/await
                     const response = await fetch(scopeUrl);
                     const text = await response.text(); // Get the response as text
@@ -1472,11 +1918,11 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
                         let month = date.setMonth(date.getMonth() - 1);
                         console.log("month number get " + month);
                         console.log("Month no " + month);
-                        const months = date.toLocaleString('default', { month: 'long' });
+                        const months = date.toLocaleString('default', { month: 'short' });
                         console.log("string no " + months);
                         const year = date.getFullYear();
 
-                        const formattedMonth = `${months} ${year}`;
+                        let formattedMonth = `${months} ${year}`;
                         console.log("Formatted Month and Year:", formattedMonth);
 
                         // If there is no timestamp or value, skip to next record
@@ -1488,21 +1934,16 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
                         // Push data to chartData
                         chartData.push({
                             month: formattedMonth,  // Use the correct month name from monthNames array
-                            value: parseFloat(value)   // Convert value to a float for proper numeric handling
+                            value: parseFloat(value).toFixed(2)   // Convert value to a float for proper numeric handling
                         });
                     }
 
                     // Debugging: Log chart data after processing
                     console.log("Chart Data:", chartData);
-
-                } catch (error) {
-                    console.error('Error fetching data:', error);
-                }
             }
 
             // Update chart data
-            powerChart.data = chartData;
-
+            powerChart.data = chartData.reverse();
             // Create category axis (X-axis) for months
             var categoryAxis = powerChart.xAxes.push(new am4charts.CategoryAxis());
             categoryAxis.dataFields.category = "month"; // Bind X-axis to month
@@ -1548,523 +1989,47 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
             lineSeries.tooltip.label.fill = am4core.color("#ffffff"); // Set tooltip label color
             lineSeries.tooltip.pointerOrientation = "horizontal"; // Set tooltip orientation
 
-            powerChart.cursor = cursor; // Assign cursor to chart
-            powerChart.logo.disabled = true;
+            powerChart.cursor = cursor;
         });
 
 
-
-    }
-
-    async function lineChart4() {
-        let currentDate = new Date();
-        currentDate.setDate(currentDate.getDate());
-
-        // Format the date (optional)
-        let previousDate = currentDate.toISOString().split('T')[0];
-        //console.log("previos day " + previousDate);
-        const response = await fetch(url + "/obix/histories/Barclays/scope1/~historyQuery?start=" + previousDate + "T00:00:00.000+05:30");
-        //console.log(response);
-        const text = await response.text();
-
-        // Parse the XML data
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(text, "text/xml");
-
-        // Get all <obj> elements that contain timestamp and value
-        const objElements = xmlDoc.getElementsByTagName("obj");
-
-        // Initialize arrays to store time and value
-        let times = [];
-        let values = [];
-
-        // Iterate through the <obj> elements to extract the time and value
-        for (let i = 0; i < objElements.length; i++) {
-            const obj = objElements[i];
-
-            const timestampElement = obj.getElementsByTagName("abstime")[0];
-            const valueElement = obj.getElementsByTagName("real")[0];
-
-            // Check if both timestamp and value exist and are not null
-            if (timestampElement && valueElement) {
-                const timestamp = timestampElement.getAttribute("val");
-                const value = valueElement.getAttribute("val");
-
-                if (timestamp && value) {
-                    // Extract only the time (HH:mm) from the timestamp
-                    const time = timestamp.split("T")[1]?.split(":").slice(0, 2).join(":");
-
-                    // Ensure time is valid and add to arrays
-                    if (time) {
-                        times.push(time);
-                        values.push(parseFloat(value));
-                    }
-                }
-            }
-        }
-
-        // Dispose of existing chart if it exists
-        if (powerChart) {
-            if (powerChart instanceof ApexCharts) {
-                console.log("Chart destroyed");
-                powerChart.destroy(); // Dispose the existing chart
-            } else if (powerChart instanceof AmCharts.AmChart) {
-                console.log("Chart destroyed");
-                powerChart.clear(); // Clear the existing AmCharts instance
-            } else if (powerChart instanceof am4charts.XYChart) {
-                console.log("Chart destroyed");
-                powerChart.dispose(); // Dispose the existing am4charts instance
-            }
-        }
-
-        am4core.ready(function () {
-            // Themes begin
-            am4core.useTheme(am4themes_animated);
-            // Themes end
-
-            // Create chart instance
-            powerChart = am4core.create("chartdiv2", am4charts.XYChart);
-
-            // Prepare data array based on extracted times and values
-            powerChart.data = times.map((time, index) => ({
-                "time": time, // Time in HH:mm format
-                "value": values[index] // Corresponding value
-            }));
-
-            // Create axes
-            var categoryAxis = powerChart.xAxes.push(new am4charts.CategoryAxis());
-            categoryAxis.dataFields.category = "time";
-            categoryAxis.renderer.labels.template.fill = am4core.color("#000000"); // Set x-axis labels color
-            categoryAxis.title.fill = am4core.color("#000000"); // Set x-axis title color
-            categoryAxis.renderer.labels.template.rotation = 315; // Set rotation
-            categoryAxis.renderer.labels.template.horizontalCenter = "right"; // Align to the right
-            categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center vertically
-            categoryAxis.renderer.minGridDistance = 1; // Ensure all categories are displayed
-            categoryAxis.renderer.labels.template.dy = -15;
-            categoryAxis.renderer.labels.template.fontSize = 10;
-            categoryAxis.renderer.labels.template.dx = 10;
-
-            var valueAxis = powerChart.yAxes.push(new am4charts.ValueAxis());
-            valueAxis.renderer.labels.template.fill = am4core.color("#000000"); // Set y-axis labels color
-            valueAxis.title.fill = am4core.color("#000000"); // Set y-axis title color
-
-            // Create series
-            var lineSeries = powerChart.series.push(new am4charts.LineSeries());
-            lineSeries.dataFields.valueY = "value";
-            lineSeries.dataFields.categoryX = "time";
-            lineSeries.strokeWidth = 2;
-            lineSeries.stroke = am4core.color("#14C38E");
-
-            // Add circle bullet
-            var bullet = lineSeries.bullets.push(new am4charts.CircleBullet());
-            bullet.circle.radius = 3; // Size of the bullet point
-            bullet.circle.strokeWidth = 0.5;
-            bullet.circle.fill = am4core.color("#fc030b"); // Bullet fill color
-            bullet.circle.stroke = am4core.color("#14C38E"); // Bullet stroke color
-
-            // Set the bullet's color to match the line's color
-            bullet.adapter.add("fill", function (fill, target) {
-                return target.stroke;
-            });
-
-            // Configure cursor
-            var cursor = new am4charts.XYCursor();
-            lineSeries.tooltipText = "{categoryX}: [bold]{valueY}[/]";
-            lineSeries.tooltip.getFillFromObject = false; // Disable tooltip fill from series
-            lineSeries.tooltip.background.fill = am4core.color("#14C38E"); // Set tooltip background color
-            lineSeries.tooltip.label.fill = am4core.color("#ffffff"); // Set tooltip label color
-            lineSeries.tooltip.pointerOrientation = "horizontal"; // Set tooltip orientation
-
-            // Enable zooming and panning
-            powerChart.scrollbarX = new am4core.Scrollbar();
-            powerChart.scrollbarX.disabled = true; // Disable scrollbar (we don't need it)
-            powerChart.zoomOutButton.disabled = false; // Allow the user to zoom out using a button
-
-            // Enable zooming on both axes
-            powerChart.xAxes.getIndex(0).renderer.minGridDistance = 50; // Optional: increase this to reduce the zoom level
-            powerChart.cursor = new am4charts.XYCursor();
-            powerChart.cursor.behavior = "zoomXY"; // Enable zoom on both axes
-
-
-            powerChart.cursor = cursor; // Assign cursor to chart
-            powerChart.logo.disabled = true;
-        }); // end am4core.ready()
-    }
-
-    lineChart4();
-
-
-    async function barChart() {
-        var startDateValue = $("#startDatePower").val();
-        var endDateValue = $("#endDatePower").val();
-
-        // Define the scopes
-        const scopes = ['scope1', 'scope2', 'scope3'];
-
-        let scopeValues = [];
-
-        // Fetch data for each scope
-        for (let scope of scopes) {
-            const response = await fetch(url + `/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${startDatePower}&end=${endDatePower}`);
-            const text = await response.text();
-
-            // Parse the XML data
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(text, "text/xml");
-
-            // Get all <obj> elements
-            const objs = xmlDoc.getElementsByTagName("obj");
-
-            // Process each <obj> element
-            for (let i = 0; i < objs.length; i++) {
-                const obj = objs[i];
-                const abstime = obj.getElementsByTagName("abstime")[0];
-                const real = obj.getElementsByTagName("real")[0];
-
-                if (abstime && real) {
-                    const dateText = abstime.getAttribute("val");
-                    const valueText = real.getAttribute("val");
-
-                    if (valueText && dateText) {
-                        const value = parseFloat(valueText).toFixed(2); // Format to 2 decimal places
-                        const date = new Date(dateText);
-
-                        // Add the data for each scope
-                        const existingEntry = scopeValues.find(entry => entry.date.getTime() === date.getTime());
-
-                        if (existingEntry) {
-                            existingEntry[scope] = parseFloat(value); // Add the value to the existing entry for that date
-                        } else {
-                            scopeValues.push({
-                                date: date,
-                                [scope]: parseFloat(value) // Dynamically add the value for the scope
-                            });
-                        }
-                    }
-                }
-            }
-        }
-
-        if (startDateValue && endDateValue) {
-            var startDate = new Date(startDateValue);
-            var endDate = new Date(endDateValue);
-
-            // if (!await validateDateRange(startDate, endDate)) {
-            //     return; // Exit if validation fails
-            // }
-
-            // var chartData = generateChartData(startDate, endDate);
-
-            // function generateChartData(startDate, endDate) {
-            //     var chartData = [];
-            //     var visits = 1200;
-
-            //     var currentDate = new Date(startDate);
-            //     while (currentDate <= endDate) {
-            //         visits += Math.round((Math.random() < 0.5 ? 1 : -1) * Math.random() * 10);
-
-            //         chartData.push({
-            //             date: new Date(currentDate),
-            //             power: visits
-            //         });
-
-            //         currentDate.setDate(currentDate.getDate() + 1);
-            //     }
-            //     return chartData;
-            // }
-
-            // if (chartData.length === 0) {
-            //     alert('No data to display for the selected range');
-            //     return;
-            // }
-
-            if (powerChart) {
-                if (powerChart instanceof ApexCharts) {
-                    console.log("Chart destroyed");
-                    powerChart.destroy(); // Dispose the existing chart
-                } else if (powerChart instanceof AmCharts.AmChart) {
-                    console.log("Chart destroyed");
-                    powerChart.clear(); // Clear the existing AmCharts instance
-                } else if (powerChart instanceof am4charts.XYChart) {
-                    console.log("Chart destroyed");
-                    powerChart.dispose(); // Dispose the existing am4charts instance
-                }
-            }
-
-            powerChart = AmCharts.makeChart("chartdiv2", {
-                "type": "serial",
-                "theme": "white",
-                "color": "#000",
-                "legend": {
-                    "useGraphSettings": true,
-                    "color": "#000",
-                    "position": "top",
-                    "align": "center",
-                    "marginBottom": 10,
-                    "valueText": ""
-                },
-                "dataProvider": scopeValues,
-                "synchronizeGrid": true,
-                "valueAxes": [{
-                    "id": "v1",
-                    "axisColor": "#000",
-                    "axisThickness": 0.5,
-                    "axisAlpha": 1,
-                    "position": "left"
-                }],
-                "graphs": [
-                    {
-                        "valueAxis": "v1",
-                        "lineColor": "#3AA6B9",
-                        "bulletBorderThickness": 1,
-                        "hideBulletsCount": 30,
-                        "title": "Power Consumption",
-                        "valueField": "scope1",
-                        "fillAlphas": 1,
-                        "type": "column",
-                        "balloonText": "<span style='font-size:13px;'>[[value]]</span>",  // Custom font size
-                        "balloon": {
-                            "adjustBorderColor": false,
-                            "color": "#000",  // Text color
-                            "fillColor": "#3AA6B9",  // Background color (same as line color)
-                            "borderColor": "#3AA6B9"
-                        }
-                    }],
-                "chartScrollbar": {
-                    "offset": 20
-                },
-                "chartCursor": {
-                    "cursorPosition": "mouse",
-                    "cursorColor": "#000000",
-                },
-                "categoryField": "date",
-                "categoryAxis": {
-                    "parseDates": true,
-                    "axisColor": "#000",
-                    "minorGridEnabled": true
-                },
-                "export": {
-                    "enabled": true // Disable export menu
-                }
-            });
-
-            powerChart.addListener("dataUpdated", zoomChart);
-            zoomChart();
-
-            function zoomChart() {
-                powerChart.zoomToIndexes(powerChart.dataProvider.length - 70, powerChart.dataProvider.length - 1);
-            }
-        }
-    }
-
-    async function lineChartMonthlyPower() {
-        // Get the current date
-        const today = new Date();
-        const currentMonth = today.getMonth();
-
-        // Set startDate and endDate to the previous month
-        const startDate = new Date(today.getFullYear(), currentMonth - 1, 1);
-        const endDate = new Date(today.getFullYear(), currentMonth, 0);
-
-        const startISO = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
-        const endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
-
-        // Define the scopes
-        const scopes = ['scope1', 'scope2', 'scope3'];
-
-        let scopeValues = [];
-
-        // Fetch data for each scope
-        for (let scope of scopes) {
-            const response = await fetch(url + `/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${startISO}&end=${endISO}`);
-            const text = await response.text();
-
-            // Parse the XML data
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(text, "text/xml");
-
-            // Get all <obj> elements
-            const objs = xmlDoc.getElementsByTagName("obj");
-
-            // Process each <obj> element
-            for (let i = 0; i < objs.length; i++) {
-                const obj = objs[i];
-                const abstime = obj.getElementsByTagName("abstime")[0];
-                const real = obj.getElementsByTagName("real")[0];
-
-                if (abstime && real) {
-                    const dateText = abstime.getAttribute("val");
-                    const valueText = real.getAttribute("val");
-
-                    if (valueText && dateText) {
-                        const value = parseFloat(valueText).toFixed(2); // Format to 2 decimal places
-                        const date = new Date(dateText);
-
-                        // Add the data for each scope
-                        const existingEntry = scopeValues.find(entry => entry.date.getTime() === date.getTime());
-
-                        if (existingEntry) {
-                            existingEntry[scope] = parseFloat(value); // Add the value to the existing entry for that date
-                        } else {
-                            scopeValues.push({
-                                date: date,
-                                [scope]: parseFloat(value) // Dynamically add the value for the scope
-                            });
-                        }
-                    }
-                }
-            }
-        }
-        // var chartData = generateChartData(startDate, endDate);
-
-        // function generateChartData(startDate, endDate) {
-        //     var chartData = [];
-        //     var visits = 1200;
-
-        //     var currentDate = new Date(startDate);
-        //     while (currentDate <= endDate) {
-        //         visits += Math.round((Math.random() < 0.5 ? 1 : -1) * Math.random() * 10);
-
-        //         chartData.push({
-        //             date: new Date(currentDate),
-        //             scope1: visits
-        //         });
-
-        //         currentDate.setDate(currentDate.getDate() + 1);
-        //     }
-        //     return chartData;
-        // }
-
-        // // Alert if no data exists
-        // if (chartData.length === 0) {
-        //     alert('No data to display for the selected range');
-        //     return;
-        // }
-
-        // // Destroy existing chart if it exists
-        // if (powerChart) {
-        //     if (powerChart instanceof ApexCharts) {
-        //         console.log("Pie chart destroyed");
-        //         powerChart.destroy(); // Dispose the existing chart
-        //     } else if (powerChart instanceof AmCharts.AmChart) {
-        //         console.log("Pie chart destroyed");
-        //         powerChart.clear(); // Clear the existing AmCharts instance
-        //     } else if (powerChart instanceof am4charts.XYChart) {
-        //         console.log("Pie chart destroyed");
-        //         powerChart.dispose(); // Dispose the existing am4charts instance
-        //     }
-        // }
-
-        // Create the line chart with the generated data for the previous month
-        powerChart = AmCharts.makeChart("chartdiv2", {
-            "type": "serial",
-            "theme": "white",
-            "color": "#000",
-            "legend": {
-                "useGraphSettings": true,
-                "color": "#000",
-                "position": "top",
-                "align": "center",
-                "marginBottom": 10,
-                "valueText": ""
-            },
-            "dataProvider": scopeValues,
-            "synchronizeGrid": true,
-            "valueAxes": [{
-                "id": "v1",
-                "axisColor": "#000",
-                "axisThickness": 0.5,
-                "axisAlpha": 1,
-                "position": "left"
-            }],
-            "graphs": [{
-                "valueAxis": "v1",
-                "lineColor": "#3AA6B9",
-                "bulletBorderThickness": 1,
-                "hideBulletsCount": 30,
-                "title": "Power Consumption",
-                "valueField": "scope1",
-                "fillAlphas": 0,
-                "type": "smoothedLine",
-                "balloonText": "<span style='font-size:13px;'>[[value]]</span>",  // Custom font size
-                "balloon": {
-                    "adjustBorderColor": false,
-                    "color": "#000",  // Text color
-                    "fillColor": "#3AA6B9",  // Background color (same as line color)
-                    "borderColor": "#3AA6B9"
-                }
-            }],
-            "chartScrollbar": {
-                "offset": 20
-            },
-            "chartCursor": {
-                "cursorPosition": "mouse",
-                "cursorColor": "#000000",
-            },
-            "categoryField": "date",
-            "categoryAxis": {
-                "parseDates": true,
-                "axisColor": "#000",
-                "minorGridEnabled": true
-            },
-            "export": {
-                "enabled": true // Disable export menu
-            }
-        });
-        powerChart.addListener("dataUpdated", zoomChart);
-        zoomChart();
-
-        function zoomChart() {
-            powerChart.zoomToIndexes(powerChart.dataProvider.length - 70, powerChart.dataProvider.length - 1);
-        }
 
     }
 
     $("#startDatePower, #endDatePower").on("change", async function () {
-        await barChart();
+        await disposeChartPower(barChart);
     });
 
     $("#sav_monthly_power").on("click", async function () {
         clearDateInputsPower();
-        await lineChartMonthlyPower();
+        await disposeChartPower(lineChartMonthlyPower);
     });
 
     $("#sav_daily_power").on("click", async function () {
         clearDateInputsPower();
-        await lineChart4();
+        await disposeChartPower(lineChart4);
     });
 
     $("#sav_yearly_power").on("click", async function () {
         clearDateInputsWater();
-        await lineChart3();
+        await disposeChartPower(lineChart3);
     });
 
     /* power consumption end */
 
     /* occupancy efficiency start */
     var occupancyChart = null;
-    function removeChart(newChartFunction) {
+    async  function removeChart(newChartFunction) {
         if (occupancyChart) {
             if (occupancyChart instanceof ApexCharts) {
-                var charts = [];
-                console.log("Pie chart destroyed");
-                for (var i = 0; i < charts.length; i++) {
-                    if (charts[i] instanceof ApexCharts) {
-                        console.log("Apex chart destroyed");
-                        charts[i].destroy(); // Dispose the existing chart
-                    }
-                }
                 occupancyChart.destroy(); // Dispose the existing chart
-            } else if (occupancyChart instanceof AmCharts.AmChart) {
-                console.log("Pie chart destroyed");
-                occupancyChart.clear(); // Clear the existing AmCharts instance
-            } else if (occupancyChart instanceof am4charts.XYChart) {
+            } else {
                 console.log("Pie chart destroyed");
                 occupancyChart.dispose(); // Dispose the existing am4charts instance
             }
         }
         // Call the new chart function
-        newChartFunction();
+       await newChartFunction();
     }
 
     // Function to create and render a donut chart
@@ -2085,7 +2050,7 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
         var options = {
             series: [outValue],
             chart: {
-                height: 280,
+                height: "100%",
                 width: "100%",
                 type: 'radialBar',
             },
@@ -2093,7 +2058,7 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
                 radialBar: {
                     hollow: {
                         margin: 15,
-                        size: '90%',
+                        size: '85%',
                     },
                     dataLabels: {
                         name: {
@@ -2119,7 +2084,7 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
                             opacity: 0.35,
                         },
                     },
-                    offsetY: 30,
+                    offsetY: 0,
                 },
             },
             fill: {
@@ -2298,308 +2263,409 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
         $(this).hide();
     });
     async function occupacyLine() {
-        var startDateValue = $("#startDateOccupancy").val();
-        var endDateValue = $("#endDateOccupancy").val();
-        const scopes = ['scope1', 'scope2', 'scope3'];
+        am4core.ready(async function () {
 
-        let scopeValues = [];
+            var startDateValue = $("#startDateOccupancy").val();
+            var endDateValue = $("#endDateOccupancy").val();
+            let waterValues = [];
+            // const url = "https://localhost";
 
-        // Fetch data for each scope
-        for (let scope of scopes) {
-            const response = await fetch(`https://localhost/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${startDateValue}&end=${endDateValue}`);
-            const text = await response.text();
+            // Fetch data asynchronously for each scope
+            
+                const urlToFetch = `${url}/obix/histories/SqlServerDatabase/domestic/~historyQuery?start=${startDateValue}T23:59:59.000+05:30&end=${endDateValue}T23:59:59.000+05:30`;
+                console.log(urlToFetch);
+                try {
+                    const response = await fetch(urlToFetch);
+                    console.log(response);
 
-            // Parse the XML data
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(text, "text/xml");
+                const text = await response.text();
 
-            // Get all <obj> elements
-            const objs = xmlDoc.getElementsByTagName("obj");
+                // Parse the XML data
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(text, "text/xml");
+                    const objs = xmlDoc.getElementsByTagName("obj");
 
-            // Process each <obj> element
-            for (let i = 0; i < objs.length; i++) {
-                const obj = objs[i];
-                const abstime = obj.getElementsByTagName("abstime")[0];
-                const real = obj.getElementsByTagName("real")[0];
+                    for (let i = 0; i < objs.length; i++) {
+                        const obj = objs[i];
+                        const abstime = obj.getElementsByTagName("abstime")[0];
+                        const real = obj.getElementsByTagName("real")[0];
 
-                if (abstime && real) {
-                    const dateText = abstime.getAttribute("val");
-                    const valueText = real.getAttribute("val");
+                        if (abstime && real) {
+                            const dateText = abstime.getAttribute("val");
+                            const valueText = real.getAttribute("val");
 
-                    if (valueText && dateText) {
-                        const value = parseFloat(valueText).toFixed(2); // Format to 2 decimal places
-                        const date = new Date(dateText);
+                            if (valueText && dateText) {
+                                const value = parseFloat(valueText).toFixed(2);
+                                const date = new Date(dateText);
+                                const formattedDate = date.toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric"
+                                });
+                                const dateStr = date.toDateString();  // Use toDateString to compare without time
 
-                        // Add the data for each scope
-                        const existingEntry = scopeValues.find(entry => entry.date.getTime() === date.getTime());
+                                const existingEntry = waterValues.find(entry => entry.date.toDateString() === dateStr);
 
-                        if (existingEntry) {
-                            existingEntry[scope] = parseFloat(value); // Add the value to the existing entry for that date
-                        } else {
-                            scopeValues.push({
-                                date: date,
-                                [scope]: parseFloat(value) // Dynamically add the value for the scope
-                            });
+                                if (existingEntry) {
+                                    // Update the existing entry's value
+                                    existingEntry.value = parseFloat(value);
+                                } else {
+                                    // Add a new entry with date and value
+                                    waterValues.push({
+                                        date: date,
+                                        value: parseFloat(value)
+                                    });
+                                }
+                            }
                         }
                     }
+                } catch (error) {
+                    console.error(`Error fetching data for `);
                 }
-            }
-        }
+            
 
-        if (startDateValue && endDateValue) {
-            var startDate = new Date(startDateValue);
-            var endDate = new Date(endDateValue);
+            // Themes begin
+            am4core.useTheme(am4themes_animated);
+            // Themes end
 
-            if (!await validateDateRange(startDate, endDate)) {
-                return; // Exit if validation fails
-            }
+            // Create chart instance
+            occupancyChart = am4core.create("chartdiv3", am4charts.XYChart);
+            occupancyChart.paddingRight = 20;
 
+            // Add data
+            occupancyChart.data = waterValues;
+            console.log(occupancyChart.data);
+            waterValues.forEach(item => {
+                item.date = new Date(item.date).getTime();  // Convert to timestamp
+                console.log("item date (timestamp): " + item.date);
 
-            occupancyChart = AmCharts.makeChart('chartdiv3', {
-                "type": "serial",
-                "theme": "white",
-                "color": "#000",
-                "legend": {
-                    "useGraphSettings": true,
-                    "color": "#000",
-                    "position": "top",
-                    "align": "center",
-                    "marginBottom": 10,
-                    "valueText": ""
-                },
-                "dataProvider": scopeValues,
-                "synchronizeGrid": true,
-                "valueAxes": [{
-                    "id": "v1",
-                    "axisColor": "#000",
-                    "axisThickness": 1,
-                    "axisAlpha": 1,
-                    "position": "left",
-                }],
-                "graphs": [{
-                    "valueAxis": "v1",
-                    "lineColor": "#E11D74",
-                    "bulletBorderThickness": 1,
-                    "hideBulletsCount": 30,
-                    "title": "Occupancy Efficiency",
-                    "valueField": "occupancyefficiency1",
-                    "fillAlphas": 0,
-                    "type": "smoothedLine",
-                    "balloonText": "<span style='font-size:13px;'>[[value]]</span>",  // Custom font size
-                    "balloon": {
-                        "adjustBorderColor": false,
-                        "color": "#000",  // Text color
-                        "fillColor": "#E11D74",  // Background color (same as line color)
-                        "borderColor": "#E11D74"
-                    }
-                }],
-                "chartScrollbar": {
-                    "selectedGraphLineColor": "#888",
-                    "position": "bottom",
-                    "offset": 20,
-                },
-                "chartCursor": {
-                    "cursorPosition": "mouse",
-                    "cursorColor": "#000000",
-                },
-                "categoryField": "date",
-                "categoryAxis": {
-                    "parseDates": true,
-                    "axisColor": "#000",
-                    "minorGridEnabled": true,
-                },
-                "export": {
-                    "enabled": true,
-                    "position": "bottom-right",
-                },
-                "zoomControl": {
-                    "zoomControlEnabled": false,
-                },
+                // Convert timestamp back to a readable date
+                const formattedDate = new Date(item.date).toLocaleDateString("en-US", {
+                    // year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                });
+                item.date = formattedDate;
+                console.log("Formatted item date: " + formattedDate);
             });
 
-            occupancyChart.addListener("dataUpdated", zoomChart);
-            zoomChart();
 
-            function zoomChart() {
-                occupancyChart.zoomToIndexes(occupancyChart.dataProvider.length - 70, occupancyChart.dataProvider.length - 1);
+            // Create axes
+            var categoryAxis = occupancyChart.xAxes.push(new am4charts.CategoryAxis());
+            categoryAxis.dataFields.category = "date"; // Use 'date' instead of 'year'
+            categoryAxis.renderer.minGridDistance = 80;
+            // categoryAxis.renderer.grid.template.location = 2;
+            // categoryAxis.startLocation = 1;
+            // categoryAxis.endLocation = 1.5;
+            categoryAxis.renderer.labels.template.horizontalCenter = "middle"; // Center labels
+            categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center labels
+
+            var valueAxis = occupancyChart.yAxes.push(new am4charts.ValueAxis());
+            valueAxis.baseValue = 0;
+
+            // Function to create series
+            function createSeries(valueField, name, color) {
+                var series = occupancyChart.series.push(new am4charts.LineSeries());
+                series.dataFields.valueY = valueField;
+                series.dataFields.categoryX = "date"; // Use 'date' instead of 'year'
+                series.name = name;
+                //series.strokeWidth = 2;
+                series.tensionX = 0.77;
+                series.stroke = color;
+
+                // Bullet to display tooltips
+                var bullet = series.bullets.push(new am4charts.Bullet());
+                bullet.tooltipText = "{valueY}";
+
+                bullet.adapter.add("fill", function (fill, target) {
+                    // If the value is negative, color the bullet red, else use the series color
+                    if (target.dataItem.valueY < 0) {
+                        return am4core.color("#e11d74"); // Red for negative values
+                    }
+                    return series.stroke; // Use the series stroke color (the color passed to createSeries)
+                });
+
+                return series;
             }
-        }
-    }
-    async function occupacyBar() {
-        const months = getLast12Months(); // Get the last 12 months
-        const randomData = getRandomData(); // Generate random data for each month
+            occupancyChart.legend = new am4charts.Legend();
+            occupancyChart.legend.position = "top";
+            occupancyChart.legend.paddingBottom = 10;
+            occupancyChart.legend.labels.template.maxWidth = 95;
+            // Create three series with different data fields and colors
+            createSeries("value", "Occupancy Efficiency", "#e11d74");
 
-        // Define the data for the two floors
-        var options = {
-            series: [
-                {
-                    name: 'Occupancy Efficiency', // Series name for Floor 1
-                    data: randomData // Use random data generated
-                },
-                // {
-                //     name: 'Floor 2', // Series name for Floor 2
-                //     data: [35, 41, 36, 26, 45, 48, 52, 53, 41, 40, 45, 50] // Sample data for Floor 2
-                // }
-            ],
-            chart: {
-                type: 'bar', // Keep bar type for a vertical column chart
-                height: '100%',
-                toolbar: {
-                    show: false,
-                },
-            },
-            plotOptions: {
-                bar: {
-                    horizontal: false, // Set to false for vertical bars
-                    columnWidth: '55%',
-                    endingShape: 'rounded',
+            // Add scrollbar
+            // var scrollbarX = new am4charts.XYChartScrollbar();
+            // scrollbarX.series.push(chart.series.values[0]);  // Add the first series to the scrollbar
+            // chart.scrollbarX = scrollbarX;
+            // scrollbarX.height = 30;
+            occupancyChart.scrollbarX = new am4core.Scrollbar();
+            occupancyChart.scrollbarX.marginBottom = 20;
+
+            occupancyChart.cursor = new am4charts.XYCursor();
+            occupancyChart.logo.disabled = true;
+
+        });
+    }
+
+    async function occupacyBar() {
+        try {
+            // Get the last 12 months
+            const months = getLast12Months(); // Array of month names for the x-axis (e.g., ["Jan 2023", "Feb 2023", ...])
+            const last12Months = getLast12Months1(); // Array of objects with `startDate` for the URLs
+    
+            console.log("Last 12 Months (from getLast12Months1):", last12Months);
+    
+            const chartData = [];
+    
+            // Loop through each month to fetch data
+            for (const month of last12Months) {
+                const url = `https://localhost/obix/histories/SqlServerDatabase/domesticYearly/~historyQuery?start=${month.startDate}T23:59:59.000+05:30&limit=1`;
+    
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        console.error(`Error fetching data for ${month.startDate}: HTTP ${response.status}`);
+                        chartData.push(0); // Add 0 for missing data
+                        continue;
+                    }
+    
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const xml = parser.parseFromString(text, "application/xml");
+    
+                    // Parse the data
+                    const list = xml.getElementsByTagName("list")[0];
+                    const abstime = list?.getElementsByTagName("abstime")[0]?.getAttribute("val");
+                    const realValue = list?.getElementsByTagName("real")[0]?.getAttribute("val");
+    
+                    if (abstime && realValue) {
+                        const abstimeDate = new Date(abstime);
+                        const formattedAbstime = `${abstimeDate.getFullYear()}-${String(abstimeDate.getMonth() + 1).padStart(2, '0')}-${String(abstimeDate.getDate()).padStart(2, '0')}`;
+    
+                        if (formattedAbstime === month.startDate) {
+                            chartData.push(parseFloat(realValue).toFixed(2));
+                        } else {
+                            chartData.push(0); // Add 0 if no matching date
+                        }
+                    } else {
+                        chartData.push(0); // Add 0 for missing values
+                    }
+                } catch (error) {
+                    console.error(`Error processing data for ${month.startDate}:`, error);
+                    chartData.push(0); // Add 0 in case of errors
                 }
-            },
-            colors: ["#E11D74"], // Two different colors for each floor , "#4A90E2"
-            dataLabels: {
-                enabled: false,
-            },
-            stroke: {
-                show: true,
-                width: 0,
-                colors: ['transparent'],
-            },
-            xaxis: {
-                categories: months,
-            },
-            grid: {
-                show: false,  // Disable background grid lines
-            },
-            tooltip: {
-                y: {
-                    formatter: function (val) {
-                        return val; // Customize tooltip value
+            }
+    
+            // Configure the bar chart options
+            const options = {
+                series: [
+                    {
+                        name: 'Occupancy Efficiency',
+                        data: chartData, // Data for the chart
+                    }
+                ],
+                chart: {
+                    type: 'bar',
+                    height: '100%',
+                    toolbar: {
+                        show: false,
                     },
                 },
-            },
-            legend: {
-                position: 'top', // Position of the legend
-                horizontalAlign: 'center', // Center align the legend
-                labels: {
-                    colors: ['#000000'], // Legend label color
-                }
-            }
-        };
-
-        console.log("Creating bar chart...");
-        occupancyChart = new ApexCharts(document.querySelector("#chartdiv3"), options);
-        occupancyChart.render();
-    }
-
-    async function lineChartMonthlyOccupancy() {
-        const today = new Date();
-        const currentMonth = today.getMonth();
-        const startDate = new Date(today.getFullYear(), currentMonth - 1, 1);
-        const endDate = new Date(today.getFullYear(), currentMonth, 0);
-        const startISO = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
-        const endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
-
-        const scopes = ['scope1', 'scope2', 'scope3'];
-        let scopeValues = [];
-
-        for (let scope of scopes) {
-            const response = await fetch(`https://localhost/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${startISO}&end=${endISO}`);
-            const text = await response.text();
-
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(text, "text/xml");
-            const objs = xmlDoc.getElementsByTagName("obj");
-
-            for (let i = 0; i < objs.length; i++) {
-                const obj = objs[i];
-                const abstime = obj.getElementsByTagName("abstime")[0];
-                const real = obj.getElementsByTagName("real")[0];
-
-                if (abstime && real) {
-                    const dateText = abstime.getAttribute("val");
-                    const valueText = real.getAttribute("val");
-
-                    if (valueText && dateText) {
-                        const value = parseFloat(valueText).toFixed(2);
-                        const date = new Date(dateText);
-
-                        const existingEntry = scopeValues.find(entry => entry.date.getTime() === date.getTime());
-
-                        if (existingEntry) {
-                            existingEntry[scope] = parseFloat(value);
-                        } else {
-                            scopeValues.push({
-                                date: date,
-                                [scope]: parseFloat(value)
-                            });
-                        }
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        columnWidth: '55%',
+                        endingShape: 'rounded',
+                    }
+                },
+                colors: ["#E11D74"],
+                dataLabels: {
+                    enabled: false,
+                },
+                stroke: {
+                    show: true,
+                    width: 0,
+                    colors: ['transparent'],
+                },
+                xaxis: {
+                    categories: months, // Use month names as x-axis categories
+                },
+                grid: {
+                    show: true, // Disable grid lines
+                },
+                tooltip: {
+                    y: {
+                        formatter: function (val) {
+                            return `${val}`; // Customize tooltip value
+                        },
+                    },
+                },
+                legend: {
+                    position: 'top',
+                    horizontalAlign: 'center',
+                    labels: {
+                        colors: ['#000000'], // Customize legend label color
                     }
                 }
-            }
+            };
+    
+            console.log("Creating bar chart...");
+            const occupancyChart = new ApexCharts(document.querySelector("#chartdiv3"), options);
+            occupancyChart.render();
+        } catch (error) {
+            console.error("Error creating bar chart:", error);
         }
+    }    
 
-        var chart = AmCharts.makeChart("chartdiv3", {
-            "type": "serial",
-            "theme": "white",
-            "color": "#000",
-            "legend": {
-                "useGraphSettings": true,
-                "color": "#000",
-                "position": "top",
-                "align": "center",
-                "marginBottom": 10,
-                "valueText": ""
-            },
-            "dataProvider": scopeValues,
-            "synchronizeGrid": true,
-            "valueAxes": [{
-                "id": "v1",
-                "axisColor": "#000",
-                "axisThickness": 0.5,
-                "axisAlpha": 1,
-                "position": "left"
-            }],
-            "graphs": [{
-                "valueAxis": "v1",
-                "lineColor": "#E11D74",
-                "bulletBorderThickness": 1,
-                "hideBulletsCount": 30,
-                "title": "Occupancy Efficiency",
-                "valueField": "scope1",
-                "fillAlphas": 0,
-                "type": "smoothedLine",
-                "balloonText": "<span style='font-size:13px;'>[[value]]</span>",
-                "balloon": {
-                    "adjustBorderColor": false,
-                    "color": "#000",
-                    "fillColor": "#E11D74",
-                    "borderColor": "#E11D74"
+    async function lineChartMonthlyOccupancy() {
+        am4core.ready(async function () {
+        const today = new Date();
+        const currentMonth = today.getMonth();
+
+        // Set startDate and endDate to the previous month
+        const startDate = new Date(today.getFullYear(), currentMonth - 1, 1);
+        const endDate = new Date(today.getFullYear(), currentMonth, 0);
+
+        const startISO = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+        const endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+            let waterValues = [];
+            // const url = "https://localhost";
+
+            // Fetch data asynchronously for each scope
+            
+                const urlToFetch = `${url}/obix/histories/SqlServerDatabase/domestic/~historyQuery?start=${startISO}T23:59:59.000+05:30&end=${endISO}T23:59:59.000+05:30`;
+                console.log(urlToFetch);
+                try {
+                    const response = await fetch(urlToFetch);
+                    console.log(response);
+
+                const text = await response.text();
+
+                // Parse the XML data
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(text, "text/xml");
+                    const objs = xmlDoc.getElementsByTagName("obj");
+
+                    for (let i = 0; i < objs.length; i++) {
+                        const obj = objs[i];
+                        const abstime = obj.getElementsByTagName("abstime")[0];
+                        const real = obj.getElementsByTagName("real")[0];
+
+                        if (abstime && real) {
+                            const dateText = abstime.getAttribute("val");
+                            const valueText = real.getAttribute("val");
+
+                            if (valueText && dateText) {
+                                const value = parseFloat(valueText).toFixed(2);
+                                const date = new Date(dateText);
+                                const formattedDate = date.toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric"
+                                });
+                                const dateStr = date.toDateString();  // Use toDateString to compare without time
+
+                                const existingEntry = waterValues.find(entry => entry.date.toDateString() === dateStr);
+
+                                if (existingEntry) {
+                                    // Update the existing entry's value
+                                    existingEntry.value = parseFloat(value);
+                                } else {
+                                    // Add a new entry with date and value
+                                    waterValues.push({
+                                        date: date,
+                                        value: parseFloat(value)
+                                    });
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error fetching data for `);
                 }
-            }],
-            "chartScrollbar": {
-                "offset": 20
-            },
-            "chartCursor": {
-                "cursorPosition": "mouse",
-                "cursorColor": "#000000",
-            },
-            "categoryField": "date",
-            "categoryAxis": {
-                "parseDates": true,
-                "axisColor": "#000",
-                "minorGridEnabled": true
-            },
-            "export": {
-                "enabled": true
+            
+
+            // Themes begin
+            am4core.useTheme(am4themes_animated);
+            // Themes end
+
+            // Create chart instance
+            powerChart = am4core.create("chartdiv3", am4charts.XYChart);
+            powerChart.paddingRight = 20;
+
+            // Add data
+            powerChart.data = waterValues;
+            console.log(powerChart.data);
+            waterValues.forEach(item => {
+                item.date = new Date(item.date).getTime();  // Convert to timestamp
+                console.log("item date (timestamp): " + item.date);
+
+                // Convert timestamp back to a readable date
+                const formattedDate = new Date(item.date).toLocaleDateString("en-US", {
+                    // year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                });
+                item.date = formattedDate;
+                console.log("Formatted item date: " + formattedDate);
+            });
+
+
+            // Create axes
+            var categoryAxis = powerChart.xAxes.push(new am4charts.CategoryAxis());
+            categoryAxis.dataFields.category = "date"; // Use 'date' instead of 'year'
+            categoryAxis.renderer.minGridDistance = 80;
+            // categoryAxis.renderer.grid.template.location = 2;
+            // categoryAxis.startLocation = 1;
+            // categoryAxis.endLocation = 1.5;
+            categoryAxis.renderer.labels.template.horizontalCenter = "middle"; // Center labels
+            categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center labels
+
+            var valueAxis = powerChart.yAxes.push(new am4charts.ValueAxis());
+            valueAxis.baseValue = 0;
+
+            // Function to create series
+            function createSeries(valueField, name, color) {
+                var series = powerChart.series.push(new am4charts.LineSeries());
+                series.dataFields.valueY = valueField;
+                series.dataFields.categoryX = "date"; // Use 'date' instead of 'year'
+                series.name = name;
+                series.strokeWidth = 2;
+                series.tensionX = 0.77;
+                series.stroke = color;
+
+                // Bullet to display tooltips
+                var bullet = series.bullets.push(new am4charts.Bullet());
+                bullet.tooltipText = "{valueY}";
+
+                bullet.adapter.add("fill", function (fill, target) {
+                    // If the value is negative, color the bullet red, else use the series color
+                    if (target.dataItem.valueY < 0) {
+                        return am4core.color("#e11d74"); // Red for negative values
+                    }
+                    return series.stroke; // Use the series stroke color (the color passed to createSeries)
+                });
+
+                return series;
             }
+            powerChart.legend = new am4charts.Legend();
+            powerChart.legend.position = "top";
+            powerChart.legend.paddingBottom = 10;
+            powerChart.legend.labels.template.maxWidth = 95;
+            // Create three series with different data fields and colors
+            createSeries("value", "Occupancy Efficiency", am4core.color("#e11d74"));
+
+            // Add scrollbar
+            // var scrollbarX = new am4charts.XYChartScrollbar();
+            // scrollbarX.series.push(chart.series.values[0]);  // Add the first series to the scrollbar
+            // chart.scrollbarX = scrollbarX;
+            // scrollbarX.height = 30;
+            powerChart.scrollbarX = new am4core.Scrollbar();
+            powerChart.scrollbarX.marginBottom = 20;
+
+            powerChart.cursor = new am4charts.XYCursor();
+            powerChart.logo.disabled = true;
+
         });
-
-        chart.addListener("dataUpdated", zoomChart);
-        zoomChart();
-
-        function zoomChart() {
-            chart.zoomToIndexes(chart.dataProvider.length - 70, chart.dataProvider.length - 1);
-        }
 
     }
     $("#startDateOccupancy, #endDateOccupancy").on("change", async function () {
@@ -2626,25 +2692,12 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
         // Destroy the existing chart if it exists
         if (aqiCharts) {
             if (aqiCharts instanceof ApexCharts) {
-                var charts = [];
-                console.log("Pie chart destroyed");
-                for (var i = 0; i < charts.length; i++) {
-                    if (charts[i] instanceof ApexCharts) {
-                        console.log("Apex chart destroyed");
-                        charts[i].destroy(); // Dispose the existing chart
-                    }
-                }
-                console.log("Pie chart destroyed");
                 aqiCharts.destroy(); // Dispose the existing chart
-            } else if (aqiCharts instanceof AmCharts.AmChart) {
-                console.log("Pie chart destroyed");
-                aqiCharts.clear(); // Clear the existing AmCharts instance
-            } else if (aqiCharts instanceof am4charts.XYChart) {
-                console.log("Pie chart destroyed");
+            } else {
                 aqiCharts.dispose(); // Dispose the existing am4charts instance
             }
         }
-        newChartFunction();
+       await newChartFunction();
     }
 
 
@@ -2669,13 +2722,15 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
             font-weight: bold;
         }
     `;
+    
+    style.id = 'chartdiv4-styles';
         document.head.appendChild(style);
 
         // Pie chart options
         var options = {
             series: [outValue],
             chart: {
-                height: 290,
+                height: "100%",
                 type: 'radialBar',
                 events: {
                     rendered: function (chartContext, config) {
@@ -2688,11 +2743,12 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
                             totalTextElement.style.fill = totalValue > 50 ? 'green' : 'red';
                         }
                     }
-                }
+                },
+                offsetY: -20
             },
             plotOptions: {
                 radialBar: {
-                    offsetY: 30,
+                    offsetY: 20,
                     startAngle: 0,
                     endAngle: 360,
                     hollow: {
@@ -2717,7 +2773,7 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
                         }
                     },
                     track: {
-                        background: '#2F5AD0',
+                        background: '#2F5AD0'
                     }
                 }
             },
@@ -2729,7 +2785,7 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
                 fontSize: '16px',
                 position: 'top',
                 horizontalAlign: 'center',
-                offsetY: 1,
+                offsetY: 10,
                 labels: { useSeriesColors: true },
                 markers: { size: 0 },
                 formatter: function (seriesName, opts) {
@@ -2927,319 +2983,538 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
     });
 
     async function createBarChart() {
-        // Generate data for the bar chart
-        const startDateValue = document.getElementById("startDateIAQ").value;
-        const endDateValue = document.getElementById("endDateIAQ").value;
+        // am4core.ready(async function () {
 
-        const waters = ['domestic', 'flushing'];
-        let waterValues = [];
+        //     const startDateValue = document.getElementById("startDateIAQ").value;
+        //     const endDateValue = document.getElementById("endDateIAQ").value;
+        //     let waterValues = [];
+        //     // const url = "https://localhost";
 
-        // Fetch data for each scope
-        for (let water of waters) {
+        //     // Fetch data asynchronously for each scope
+            
+        //         const urlToFetch = `${url}/obix/histories/SqlServerDatabase/domestic/~historyQuery?start=${startDateValue}T23:59:59.000+05:30&end=${endDateValue}T23:59:59.000+05:30`;
+        //         console.log(urlToFetch);
+        //         try {
+        //             const response = await fetch(urlToFetch);
+        //             console.log(response);
+
+        //         const text = await response.text();
+
+        //         // Parse the XML data
+        //             const parser = new DOMParser();
+        //             const xmlDoc = parser.parseFromString(text, "text/xml");
+        //             const objs = xmlDoc.getElementsByTagName("obj");
+
+        //             for (let i = 0; i < objs.length; i++) {
+        //                 const obj = objs[i];
+        //                 const abstime = obj.getElementsByTagName("abstime")[0];
+        //                 const real = obj.getElementsByTagName("real")[0];
+
+        //                 if (abstime && real) {
+        //                     const dateText = abstime.getAttribute("val");
+        //                     const valueText = real.getAttribute("val");
+
+        //                     if (valueText && dateText) {
+        //                         const value = parseFloat(valueText).toFixed(2);
+        //                         const date = new Date(dateText);
+        //                         const formattedDate = date.toLocaleDateString("en-US", {
+        //                             month: "short",
+        //                             day: "numeric"
+        //                         });
+        //                         const dateStr = date.toDateString();  // Use toDateString to compare without time
+
+        //                         const existingEntry = waterValues.find(entry => entry.date.toDateString() === dateStr);
+
+        //                         if (existingEntry) {
+        //                             // Update the existing entry's value
+        //                             existingEntry.value = parseFloat(value);
+        //                         } else {
+        //                             // Add a new entry with date and value
+        //                             waterValues.push({
+        //                                 date: date,
+        //                                 value: parseFloat(value)
+        //                             });
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         } catch (error) {
+        //             console.error(`Error fetching data for `);
+        //         }
+            
+
+        //     // Themes begin
+        //     am4core.useTheme(am4themes_animated);
+        //     // Themes end
+
+        //     // Create chart instance
+        //     aqiCharts = am4core.create("chartdiv4", am4charts.XYChart);
+        //     aqiCharts.paddingRight = 20;
+
+        //     // Add data
+        //     aqiCharts.data = waterValues;
+        //     console.log(aqiCharts.data);
+        //     waterValues.forEach(item => {
+        //         item.date = new Date(item.date).getTime();  // Convert to timestamp
+        //         console.log("item date (timestamp): " + item.date);
+
+        //         // Convert timestamp back to a readable date
+        //         const formattedDate = new Date(item.date).toLocaleDateString("en-US", {
+        //             // year: "numeric",
+        //             month: "short",
+        //             day: "numeric"
+        //         });
+        //         item.date = formattedDate;
+        //         console.log("Formatted item date: " + formattedDate);
+        //     });
+
+
+        //     // Create axes
+        //     var categoryAxis = aqiCharts.xAxes.push(new am4charts.CategoryAxis());
+        //     categoryAxis.dataFields.category = "date"; // Use 'date' instead of 'year'
+        //     categoryAxis.renderer.minGridDistance = 80;
+        //     // categoryAxis.renderer.grid.template.location = 2;
+        //     // categoryAxis.startLocation = 1;
+        //     // categoryAxis.endLocation = 1.5;
+        //     categoryAxis.renderer.labels.template.horizontalCenter = "middle"; // Center labels
+        //     categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center labels
+
+        //     var valueAxis = aqiCharts.yAxes.push(new am4charts.ValueAxis());
+        //     valueAxis.baseValue = 0;
+
+        //     // Function to create series
+        //     function createSeries(valueField, name, color) {
+        //         var series = aqiCharts.series.push(new am4charts.ColumnSeries());
+        //         series.dataFields.valueY = valueField;
+        //         series.dataFields.categoryX = "date"; // Use 'date' instead of 'year'
+        //         series.name = name;
+        //         series.strokeWidth = 2;
+        //         series.tensionX = 0.77;
+        //         series.stroke = color;
+
+        //         // Bullet to display tooltips
+        //         var bullet = series.bullets.push(new am4charts.Bullet());
+        //         bullet.tooltipText = "{valueY}";
+
+        //         bullet.adapter.add("fill", function (_fill, target) {
+        //             // If the value is negative, color the bullet red, else use the series color
+        //             if (target.dataItem.valueY < 0) {
+        //                 return am4core.color("#FF6600"); // Red for negative values
+        //             }
+        //             return series.stroke; // Use the series stroke color (the color passed to createSeries)
+        //         });
+
+        //         return series;
+        //     }
+        //     aqiCharts.legend = new am4charts.Legend();
+        //     aqiCharts.legend.position = "top";
+        //     aqiCharts.legend.paddingBottom = 10;
+        //     aqiCharts.legend.labels.template.maxWidth = 95;
+        //     // Create three series with different data fields and colors
+        //     createSeries("value", "Power", "#FF6600");
+
+        //     // Add scrollbar
+        //     // var scrollbarX = new am4charts.XYChartScrollbar();
+        //     // scrollbarX.series.push(chart.series.values[0]);  // Add the first series to the scrollbar
+        //     // chart.scrollbarX = scrollbarX;
+        //     // scrollbarX.height = 30;
+        //     aqiCharts.scrollbarX = new am4core.Scrollbar();
+        //     aqiCharts.scrollbarX.marginBottom = 20;
+
+        //     aqiCharts.cursor = new am4charts.XYCursor();
+        //     aqiCharts.logo.disabled = true;
+
+        // });
+
+        am4core.ready(async function () {
+            const startDateValue = document.getElementById("startDateIAQ").value;
+            const endDateValue = document.getElementById("endDateIAQ").value;
+            let waterValues = [];
+        
+            // Fetch data asynchronously
+            const urlToFetch = `${url}/obix/histories/SqlServerDatabase/domestic/~historyQuery?start=${startDateValue}T23:59:59.000+05:30&end=${endDateValue}T23:59:59.000+05:30`;
+            console.log(urlToFetch);
+        
             try {
-                const response = await fetch(`https://localhost/obix/histories/SqlServerDatabase/${water}/~historyQuery?start=${startDateValue}&end=${endDateValue}`);
-                if (!response.ok) throw new Error(`Error fetching ${water} data`);
-
+                const response = await fetch(urlToFetch);
+                console.log(response);
+        
                 const text = await response.text();
-
-                // Parse the XML data
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(text, "text/xml");
-
-                // Get all <obj> elements
                 const objs = xmlDoc.getElementsByTagName("obj");
-
-                // Process each <obj> element
+        
                 for (let i = 0; i < objs.length; i++) {
                     const obj = objs[i];
                     const abstime = obj.getElementsByTagName("abstime")[0];
                     const real = obj.getElementsByTagName("real")[0];
-
+        
                     if (abstime && real) {
                         const dateText = abstime.getAttribute("val");
                         const valueText = real.getAttribute("val");
-
+        
                         if (valueText && dateText) {
-                            const value = parseFloat(valueText).toFixed(2); // Format to 2 decimal places
+                            const value = parseFloat(valueText).toFixed(2);
                             const date = new Date(dateText);
-                            const dateStr = date.toISOString().split('T')[0]; // Standard date string
-
-                            // Add the data for each scope
-                            const existingEntry = waterValues.find(entry => entry.date === dateStr);
-
+                            const formattedDate = date.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric"
+                            });
+                            const dateStr = date.toDateString();  // Use toDateString to compare without time
+        
+                            const existingEntry = waterValues.find(entry => entry.date.toDateString() === dateStr);
+        
                             if (existingEntry) {
-                                existingEntry[water] = parseFloat(value); // Add the value to the existing entry for that date
+                                // Update the existing entry's value
+                                existingEntry.value = parseFloat(value);
                             } else {
+                                // Add a new entry with date and value
                                 waterValues.push({
-                                    date: dateStr,
-                                    [water]: parseFloat(value) // Dynamically add the value for the scope
+                                    date: date,
+                                    value: parseFloat(value)
                                 });
                             }
                         }
                     }
                 }
             } catch (error) {
-                console.error(`Error fetching or parsing data for ${water}:`, error);
-                return; // Exit if there's an error
+                console.error(`Error fetching data: ${error}`);
             }
-        }
-
-        // Check if there’s data to display
-        if (waterValues.length === 0) {
-            alert('No data available for the selected range');
-            return;
-        }
-
-        if (startDateValue && endDateValue) {
-            const startDate = new Date(startDateValue);
-            const endDate = new Date(endDateValue);
-
-            // Ensure the start date is not later than the end date
-            if (startDate > endDate) {
-                alert('Start Date cannot be after End Date');
-                return;
-            }
-            aqiCharts = AmCharts.makeChart('chartdiv4', {
-                "type": "serial",
-                "theme": "white",
-                "color": "#000",
-                "legend": {
-                    "useGraphSettings": true,
-                    "color": "#000",
-                    "position": "top",
-                    "align": "center",
-                    "marginBottom": 10,
-                    "valueText": ""
-                },
-                "dataProvider": waterValues,
-                "synchronizeGrid": true,
-                "valueAxes": [{
-                    "id": "v1",
-                    "axisColor": "#000",
-                    "axisThickness": 1,
-                    "axisAlpha": 1,
-                    "position": "left"
-                }],
-                "graphs": [{
-                    "valueAxis": "v1",
-                    "lineColor": "#FF6600",
-                    "fillColors": "#FF6600",
-                    "title": "Indoor Air Quality",
-                    "valueField": "domestic",
-                    "type": "column",
-                    "fillAlphas": 1,
-                    "balloonText": "<span style='font-size:13px;'>[[value]]</span>",  // Custom font size
-                    "balloon": {
-                        "adjustBorderColor": false,
-                        "color": "#000",  // Text color
-                        "fillColor": "#FF6600",  // Background color (same as line color)
-                        "borderColor": "#FF6600"
-                    }
-                }],
-                "chartScrollbar": {
-                    "selectedGraphLineColor": "#888",
-                    "position": "bottom",
-                    "offset": 20
-                },
-                "chartCursor": {
-                    "cursorPosition": "mouse",
-                    "cursorColor": "#000000",
-                },
-                "categoryField": "date",
-                "categoryAxis": {
-                    "parseDates": true,
-                    "axisColor": "#000",
-                    "minorGridEnabled": true
-                },
-                "export": {
-                    "enabled": true,
-                    "position": "bottom-right"
-                },
-                "zoomControl": {
-                    "zoomControlEnabled": false
-                }
+        
+            // Create chart instance
+            am4core.useTheme(am4themes_animated);
+            aqiCharts = am4core.create("chartdiv4", am4charts.XYChart);
+            aqiCharts.logo.disabled = true;
+            // Add scrollbar
+            aqiCharts.scrollbarX = new am4core.Scrollbar();
+            aqiCharts.scrollbarX.marginBottom = 20;
+        
+            aqiCharts.cursor = new am4charts.XYCursor();
+            aqiCharts.paddingRight = 20;
+        
+            // Add data to chart
+            aqiCharts.data = waterValues;
+            waterValues.forEach(item => {
+                item.date = new Date(item.date).getTime();  // Convert to timestamp
+        
+                const formattedDate = new Date(item.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric"
+                });
+                item.date = formattedDate;
             });
-
-            aqiCharts.addListener("dataUpdated", zoomChart);
-            zoomChart();
-
-            function zoomChart() {
-                aqiCharts.zoomToIndexes(aqiCharts.dataProvider.length - 70, aqiCharts.dataProvider.length - 1);
+        
+            // Create axes
+            var categoryAxis = aqiCharts.xAxes.push(new am4charts.CategoryAxis());
+            categoryAxis.dataFields.category = "date"; // Use 'date' instead of 'year'
+            categoryAxis.renderer.minGridDistance = 80;
+            categoryAxis.renderer.labels.template.horizontalCenter = "middle"; // Center labels
+            categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center labels
+        
+            var valueAxis = aqiCharts.yAxes.push(new am4charts.ValueAxis());
+            valueAxis.baseValue = 0;
+        
+            // Function to create series with the color #FF6600
+            function createSeries(valueField, name, color) {
+                var series = aqiCharts.series.push(new am4charts.ColumnSeries());
+                series.dataFields.valueY = valueField;
+                series.dataFields.categoryX = "date"; // Use 'date' instead of 'year'
+                series.name = name;
+                series.strokeWidth = 2;
+                series.tensionX = 0.77;
+                series.columns.template.fill = am4core.color(color); // Apply color to the column fill
+                series.columns.template.stroke = am4core.color(color);
+                series.columns.template.tooltipText = "{categoryX}: [bold]{valueY}[/]";
+        
+                // Bullet to display tooltips
+                var bullet = series.bullets.push(new am4charts.Bullet());
+        
+                bullet.adapter.add("fill", function (fill, target) {
+                    // If the value is negative, color the bullet with #FF6600, else use the series color
+                    if (target.dataItem.valueY < 0) {
+                        return am4core.color("#FF6600"); // Color the bullet with #FF6600
+                    }
+                    return series.stroke; // Use the series stroke color (the color passed to createSeries)
+                });
+        
+                return series;
             }
+        
+            // Add legend and series
+            aqiCharts.legend = new am4charts.Legend();
+            aqiCharts.legend.position = "top";
+            aqiCharts.legend.paddingBottom = 10;
+            aqiCharts.legend.labels.template.maxWidth = 95;
+            createSeries("value", "AQI", "#FF6600");  // Apply color to series
+        
+            
+            
+        });
+        
+    }
+
+    async function aqiBarChart() {
+        try {
+            
+            // Get the last 12 months
+            const months = getLast12Months(); // Array of month names for the x-axis (e.g., ["Jan 2023", "Feb 2023", ...])
+            const last12Months = getLast12Months1(); // Array of objects with `startDate` for the URLs
+    
+            console.log("Last 12 Months (from getLast12Months1):", last12Months);
+    
+            const chartData = [];
+    
+            // Loop through each month to fetch data
+            for (const month of last12Months) {
+                const url = `https://localhost/obix/histories/SqlServerDatabase/domesticYearly/~historyQuery?start=${month.startDate}T23:59:59.000+05:30&limit=1`;
+    
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        console.error(`Error fetching data for ${month.startDate}: HTTP ${response.status}`);
+                        chartData.push(0); // Add 0 for missing data
+                        continue;
+                    }
+    
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const xml = parser.parseFromString(text, "application/xml");
+    
+                    // Parse the data
+                    const list = xml.getElementsByTagName("list")[0];
+                    const abstime = list?.getElementsByTagName("abstime")[0]?.getAttribute("val");
+                    const realValue = list?.getElementsByTagName("real")[0]?.getAttribute("val");
+    
+                    if (abstime && realValue) {
+                        const abstimeDate = new Date(abstime);
+                        const formattedAbstime = `${abstimeDate.getFullYear()}-${String(abstimeDate.getMonth() + 1).padStart(2, '0')}-${String(abstimeDate.getDate()).padStart(2, '0')}`;
+    
+                        if (formattedAbstime === month.startDate) {
+                            chartData.push(parseFloat(realValue).toFixed(2));
+                        } else {
+                            chartData.push(0); // Add 0 if no matching date
+                        }
+                    } else {
+                        chartData.push(0); // Add 0 for missing values
+                    }
+                } catch (error) {
+                    console.error(`Error processing data for ${month.startDate}:`, error);
+                    chartData.push(0); // Add 0 in case of errors
+                }
+            }
+            const existingStyle = document.getElementById('chartdiv4-styles');
+            if (existingStyle) {
+                existingStyle.remove();
+            }
+            // Configure the bar chart options
+            const options = {
+                series: [
+                    {
+                        name: 'Occupancy Efficiency',
+                        data: chartData, // Data for the chart
+                    }
+                ],
+                chart: {
+                    type: 'bar',
+                    height: '100%',
+                    toolbar: {
+                        show: false,
+                    },
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        columnWidth: '55%',
+                        endingShape: 'rounded',
+                    }
+                },
+                colors: ["#FF6600"],
+                dataLabels: {
+                    enabled: false,
+                },
+                stroke: {
+                    show: true,
+                    width: 0,
+                    colors: ['transparent'],
+                },
+                xaxis: {
+                    categories: months, // Use month names as x-axis categories
+                },
+                grid: {
+                    show: true, // Disable grid lines
+                },
+                tooltip: {
+                    y: {
+                        formatter: function (val) {
+                            return `${val}`; // Customize tooltip value
+                        },
+                    },
+                },
+                legend: {
+                    position: 'top',
+                    horizontalAlign: 'center',
+                    labels: {
+                        colors: ['#000000'], // Customize legend label color
+                    }
+                }
+            };
+    
+            console.log("Creating bar chart...");
+            aqiCharts = new ApexCharts(document.querySelector("#chartdiv4"), options);
+            aqiCharts.render();
+        } catch (error) {
+            console.error("Error creating bar chart:", error);
         }
     }
-    async function aqiBarChart() {
-        // Get the last 12 months and random data
-        const months = getLast12Months(); // Get the last 12 months
-        const randomData = getRandomData(); // Generate random data for each month
-
-        var options = {
-            series: [{
-                data: randomData // Use random data generated
-            }],
-            chart: {
-                type: 'bar',
-                height: "100%",
-                toolbar: {
-                    show: false
-                }
-            },
-            plotOptions: {
-                bar: {
-                    horizontal: false,
-                    columnWidth: '55%',
-                    endingShape: 'rounded'
-                }
-            },
-            dataLabels: {
-                enabled: false
-            },
-            stroke: {
-                show: true,
-                width: 2,
-                colors: ['transparent']
-            },
-            xaxis: {
-                categories: months, // Set x-axis categories to the last 12 months
-                labels: {
-                    style: {
-                        colors: '#000000',
-                    },
-                    rotate: 315 // Rotate x-axis labels by 315 degrees
-                }
-            },
-            yaxis: {
-                labels: {
-                    style: {
-                        colors: '#000000',
-                    }
-                }
-            },
-            fill: {
-                colors: ['#FF6600'],  // Add the orange color for bars
-                opacity: 1
-            },
-            tooltip: {
-                y: {
-                    formatter: function (val) {
-                        return val;
-                    }
-                }
-            }
-        };
-
-        aqiCharts = new ApexCharts(document.querySelector("#chartdiv4"), options);
-        aqiCharts.render();
-    }
-
     async function lineChartMonthlyAqi() {
+        am4core.ready(async function () {
         const today = new Date();
         const currentMonth = today.getMonth();
+
+        // Set startDate and endDate to the previous month
         const startDate = new Date(today.getFullYear(), currentMonth - 1, 1);
         const endDate = new Date(today.getFullYear(), currentMonth, 0);
+
         const startISO = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
         const endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+            let waterValues = [];
+            // const url = "https://localhost";
 
-        const scopes = ['scope1', 'scope2', 'scope3'];
-        let scopeValues = [];
+            // Fetch data asynchronously for each scope
+            
+                const urlToFetch = `${url}/obix/histories/SqlServerDatabase/domestic/~historyQuery?start=${startISO}T23:59:59.000+05:30&end=${endISO}T23:59:59.000+05:30`;
+                console.log(urlToFetch);
+                try {
+                    const response = await fetch(urlToFetch);
+                    console.log(response);
 
-        for (let scope of scopes) {
-            const response = await fetch(`https://localhost/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${startISO}&end=${endISO}`);
-            const text = await response.text();
+                const text = await response.text();
 
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(text, "text/xml");
-            const objs = xmlDoc.getElementsByTagName("obj");
+                // Parse the XML data
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(text, "text/xml");
+                    const objs = xmlDoc.getElementsByTagName("obj");
 
-            for (let i = 0; i < objs.length; i++) {
-                const obj = objs[i];
-                const abstime = obj.getElementsByTagName("abstime")[0];
-                const real = obj.getElementsByTagName("real")[0];
+                    for (let i = 0; i < objs.length; i++) {
+                        const obj = objs[i];
+                        const abstime = obj.getElementsByTagName("abstime")[0];
+                        const real = obj.getElementsByTagName("real")[0];
 
-                if (abstime && real) {
-                    const dateText = abstime.getAttribute("val");
-                    const valueText = real.getAttribute("val");
+                        if (abstime && real) {
+                            const dateText = abstime.getAttribute("val");
+                            const valueText = real.getAttribute("val");
 
-                    if (valueText && dateText) {
-                        const value = parseFloat(valueText).toFixed(2);
-                        const date = new Date(dateText);
+                            if (valueText && dateText) {
+                                const value = parseFloat(valueText).toFixed(2);
+                                const date = new Date(dateText);
+                                const formattedDate = date.toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric"
+                                });
+                                const dateStr = date.toDateString();  // Use toDateString to compare without time
 
-                        const existingEntry = scopeValues.find(entry => entry.date.getTime() === date.getTime());
+                                const existingEntry = waterValues.find(entry => entry.date.toDateString() === dateStr);
 
-                        if (existingEntry) {
-                            existingEntry[scope] = parseFloat(value);
-                        } else {
-                            scopeValues.push({
-                                date: date,
-                                [scope]: parseFloat(value)
-                            });
+                                if (existingEntry) {
+                                    // Update the existing entry's value
+                                    existingEntry.value = parseFloat(value);
+                                } else {
+                                    // Add a new entry with date and value
+                                    waterValues.push({
+                                        date: date,
+                                        value: parseFloat(value)
+                                    });
+                                }
+                            }
                         }
                     }
+                } catch (error) {
+                    console.error(`Error fetching data for `);
                 }
+            
+
+            // Themes begin
+            am4core.useTheme(am4themes_animated);
+            // Themes end
+
+            // Create chart instance
+            aqiCharts = am4core.create("chartdiv4", am4charts.XYChart);
+            aqiCharts.paddingRight = 20;
+
+            // Add data
+            aqiCharts.data = waterValues;
+            console.log(aqiCharts.data);
+            waterValues.forEach(item => {
+                item.date = new Date(item.date).getTime();  // Convert to timestamp
+                console.log("item date (timestamp): " + item.date);
+
+                // Convert timestamp back to a readable date
+                const formattedDate = new Date(item.date).toLocaleDateString("en-US", {
+                    // year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                });
+                item.date = formattedDate;
+                console.log("Formatted item date: " + formattedDate);
+            });
+
+
+            // Create axes
+            var categoryAxis = aqiCharts.xAxes.push(new am4charts.CategoryAxis());
+            categoryAxis.dataFields.category = "date"; // Use 'date' instead of 'year'
+            categoryAxis.renderer.minGridDistance = 80;
+            // categoryAxis.renderer.grid.template.location = 2;
+            // categoryAxis.startLocation = 1;
+            // categoryAxis.endLocation = 1.5;
+            categoryAxis.renderer.labels.template.horizontalCenter = "middle"; // Center labels
+            categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center labels
+
+            var valueAxis = aqiCharts.yAxes.push(new am4charts.ValueAxis());
+            valueAxis.baseValue = 0;
+
+            // Function to create series
+            function createSeries(valueField, name, color) {
+                var series = aqiCharts.series.push(new am4charts.LineSeries());
+                series.dataFields.valueY = valueField;
+                series.dataFields.categoryX = "date"; // Use 'date' instead of 'year'
+                series.name = name;
+                series.strokeWidth = 2;
+                series.tensionX = 0.77;
+                series.stroke = color;
+
+                // Bullet to display tooltips
+                var bullet = series.bullets.push(new am4charts.Bullet());
+                bullet.tooltipText = "{categoryX}:{valueY}";
+
+                bullet.adapter.add("fill", function (fill, target) {
+                    // If the value is negative, color the bullet red, else use the series color
+                    if (target.dataItem.valueY < 0) {
+                        return am4core.color("#FF6600"); // Red for negative values
+                    }
+                    return series.stroke; // Use the series stroke color (the color passed to createSeries)
+                });
+
+                return series;
             }
-        }
-        aqiCharts = AmCharts.makeChart("chartdiv4", {
-            "type": "serial",
-            "theme": "white",
-            "color": "#000",
-            "legend": {
-                "useGraphSettings": true,
-                "color": "#000",
-                "position": "top",
-                "align": "center",
-                "marginBottom": 10,
-                "valueText": ""
-            },
-            "dataProvider": scopeValues,
-            "synchronizeGrid": true,
-            "valueAxes": [{
-                "id": "v1",
-                "axisColor": "#000",
-                "axisThickness": 0.5,
-                "axisAlpha": 1,
-                "position": "left"
-            }],
-            "graphs": [{
-                "valueAxis": "v1",
-                "lineColor": "#FF6600",
-                "bulletBorderThickness": 1,
-                "hideBulletsCount": 30,
-                "title": "Indoor Air Quality",
-                "valueField": "scope1",
-                "fillAlphas": 0,
-                "type": "smoothedLine",
-                "balloonText": "<span style='font-size:13px;'>[[value]]</span>",  // Custom font size
-                "balloon": {
-                    "adjustBorderColor": false,
-                    "color": "#000",  // Text color
-                    "fillColor": "#FF6600",
-                    "borderColor": "#FF6600"
-                }
-            }],
-            "chartScrollbar": {
-                "offset": 20
-            },
-            "chartCursor": {
-                "cursorPosition": "mouse",
-                "cursorColor": "#000000",
-            },
-            "categoryField": "date",
-            "categoryAxis": {
-                "parseDates": true,
-                "axisColor": "#000",
-                "minorGridEnabled": true
-            },
-            "export": {
-                "enabled": true // Disable export menu
-            }
+            aqiCharts.legend = new am4charts.Legend();
+            aqiCharts.legend.position = "top";
+            aqiCharts.legend.paddingBottom = 10;
+            aqiCharts.legend.labels.template.maxWidth = 95;
+            // Create three series with different data fields and colors
+            createSeries("value", "AQI", am4core.color("#FF6600"));
+
+            // Add scrollbar
+            // var scrollbarX = new am4charts.XYChartScrollbar();
+            // scrollbarX.series.push(chart.series.values[0]);  // Add the first series to the scrollbar
+            // chart.scrollbarX = scrollbarX;
+            // scrollbarX.height = 30;
+            aqiCharts.scrollbarX = new am4core.Scrollbar();
+            aqiCharts.scrollbarX.marginBottom = 20;
+
+            aqiCharts.cursor = new am4charts.XYCursor();
+            aqiCharts.logo.disabled = true;
+
         });
-
-        aqiCharts.addListener("dataUpdated", zoomChart);
-        zoomChart();
-
-        function zoomChart() {
-            aqiCharts.zoomToIndexes(aqiCharts.dataProvider.length - 70, aqiCharts.dataProvider.length - 1);
-        }
     }
     $("#startDateIAQ, #endDateIAQ").on("change", async function () {
         // await createBarChart();
@@ -3273,13 +3548,7 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
                 console.log("ApexCharts instance destroyed");
                 epiChart.destroy(); // Destroy the existing ApexCharts instance
             }
-            // Check if epiChart is an instance of AmCharts
-            else if (epiChart instanceof AmCharts.AmChart) {
-                console.log("AmCharts instance destroyed");
-                epiChart.clear(); // Clear the existing AmCharts instance
-            }
-            // Check if epiChart is an instance of am4charts.XYChart
-            else if (epiChart instanceof am4charts.XYChart) {
+            else {
                 console.log("am4charts.XYChart instance destroyed");
                 epiChart.dispose(); // Dispose the existing am4charts.XYChart instance
             }
@@ -3316,7 +3585,8 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
                 font-weight: bold;
             }
         `;
-            document.head.appendChild(style);
+        style.id = 'chartdiv5-styles';
+        document.head.appendChild(style);
 
             // Chart configuration
             const options = {
@@ -3326,7 +3596,8 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
                     height: "100%",
                     animations: {
                         enabled: false // Disable all animations, including rotation
-                    }
+                    },
+                    offsetY: -20
                 },
                 labels: ['HVAC', 'UPS', 'RP & LTG'],
                 tooltip: {
@@ -3344,7 +3615,7 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
                     labels: {
                         colors: ['#000000', '#000000', '#000000'], // Legend label colors
                     },
-                    offsetY: 0
+                    offsetY: 10
                 },
                 plotOptions: {
                     pie: {
@@ -3380,8 +3651,7 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
                                         return totalValue;
                                     }
                                 }
-                            },
-                            offsetY: 10
+                            }
                         }
                     }
                 },
@@ -3412,204 +3682,208 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
     replaceEpiChart(epiDonutChart);
 
     async function epiLine() {
-        var startDateValue = document.getElementById("startDateEPI").value;
-        var endDateValue = document.getElementById("endDateEPI").value;
+        am4core.ready(async function () {
 
-        const scopes = ['scope1', 'scope2', 'scope3'];
-        let scopeValues = [];
+            var startDateValue = document.getElementById("startDateEPI").value;
+            var endDateValue = document.getElementById("endDateEPI").value;
+            const waters = ['scope1date', 'scope2date', 'scope3date'];
+            let waterValues = [];
+            // const url = "https://localhost";
 
-        for (let scope of scopes) {
-            const response = await fetch(`https://localhost/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${startDateValue}&end=${endDateValue}`);
-            const text = await response.text();
+            // Fetch data asynchronously for each scope
+            for (let scope of waters) {
+                const urlToFetch = `${url}/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${startDateValue}T23:59:59.000+05:30&end=${endDateValue}T23:59:59.000+05:30`;
+                console.log(urlToFetch);
+                try {
+                    const response = await fetch(urlToFetch);
+                    console.log(response);
+                    if (!response.ok) {
+                        console.error(`Error fetching data for ${scope}: ${response.status} - ${response.statusText}`);
+                        continue;
+                    }
 
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(text, "text/xml");
-            const objs = xmlDoc.getElementsByTagName("obj");
+                const text = await response.text();
 
-            for (let i = 0; i < objs.length; i++) {
-                const obj = objs[i];
-                const abstime = obj.getElementsByTagName("abstime")[0];
-                const real = obj.getElementsByTagName("real")[0];
+                // Parse the XML data
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(text, "text/xml");
+                    const objs = xmlDoc.getElementsByTagName("obj");
 
-                if (abstime && real) {
-                    const dateText = abstime.getAttribute("val");
-                    const valueText = real.getAttribute("val");
+                    for (let i = 0; i < objs.length; i++) {
+                        const obj = objs[i];
+                        const abstime = obj.getElementsByTagName("abstime")[0];
+                        const real = obj.getElementsByTagName("real")[0];
 
-                    if (valueText && dateText) {
-                        const value = parseFloat(valueText).toFixed(2);
-                        const date = new Date(dateText);
+                        if (abstime && real) {
+                            const dateText = abstime.getAttribute("val");
+                            const valueText = real.getAttribute("val");
 
-                        const existingEntry = scopeValues.find(entry => entry.date.getTime() === date.getTime());
+                            if (valueText && dateText) {
+                                const value = parseFloat(valueText).toFixed(2);
+                                const date = new Date(dateText);
+                                const formattedDate = date.toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric"
+                                });
+                                const dateStr = date.toDateString();  // Use toDateString to compare without time
 
-                        if (existingEntry) {
-                            existingEntry[scope] = parseFloat(value);
-                        } else {
-                            scopeValues.push({
-                                date: date,
-                                [scope]: parseFloat(value)
-                            });
+                                const existingEntry = waterValues.find(entry => entry.date.toDateString() === dateStr);
+
+                                if (existingEntry) {
+                                    existingEntry[scope] = parseFloat(value);
+                                } else {
+                                    waterValues.push({
+                                        date: date,
+                                        [scope]: parseFloat(value)
+                                    });
+                                }
+                            }
                         }
                     }
+                } catch (error) {
+                    console.error(`Error fetching data for ${scope}: ${error.message}`);
                 }
             }
-        }
 
-        if (startDateValue && endDateValue) {
-            var startDate = new Date(startDateValue);
-            var endDate = new Date(endDateValue);
+            // Themes begin
+            am4core.useTheme(am4themes_animated);
+            // Themes end
 
-            // Ensure the start date is not later than the end date
-            if (startDate > endDate) {
-                alert('Start Date cannot be after End Date');
-                return;
-            }
+            // Create chart instance
+            epiChart = am4core.create("chartdiv5", am4charts.XYChart);
+            epiChart.paddingRight = 20;
 
-            var chartData = generateChartData(startDate, endDate);
+            // Add data
+            epiChart.data = waterValues;
+            waterValues.forEach(item => {
+                item.date = new Date(item.date).getTime();  // Convert to timestamp
+                console.log("item date (timestamp): " + item.date);
 
-            if (chartData.length === 0) {
-                alert('No data to display for the selected range');
-                return;
-            }
-            function generateChartData(startDate, endDate) {
-                var chartData = [];
-                var visits = 10; // Different initial value for the second chart
-                var currentDate = new Date(startDate);
-
-                while (currentDate <= endDate) {
-                    visits += Math.round((Math.random() < 0.5 ? 1 : -1) * Math.random() * 10);
-                    chartData.push({
-                        date: new Date(currentDate),
-                        domesticwater: visits,
-                        flushingwater: visits + Math.round(Math.random() * 30),
-                        flushingwater1: visits + Math.round(Math.random() * 5)
-                    });
-                    currentDate.setDate(currentDate.getDate() + 1);
-                }
-                return chartData;
-            }
-            // Replace the current chart with a new line chart
-
-            epiChart = AmCharts.makeChart('chartdiv5', {
-                "type": "serial",
-                "theme": "bwhite",
-                "color": "#000",
-                "legend": {
-                    "useGraphSettings": true,
-                    "color": "#000",
-                    "position": "top",       // Legend at top
-                    "align": "center",       // Center the legend
-                    "marginBottom": 10,      // Space below legend
-                    "valueText": ""
-                },
-                "dataProvider": scopeValues,
-                "synchronizeGrid": true,
-                "valueAxes": [{
-                    "id": "v1",
-                    "axisColor": "#000",
-                    "axisThickness": 1,
-                    "axisAlpha": 1,
-                    "position": "left"
-                }],
-                "graphs": [{
-                    "valueAxis": "v1",
-                    "lineColor": "#FFB200",
-                    "bulletBorderThickness": 1,
-                    "hideBulletsCount": 30,
-                    "title": "HVAC",
-                    "valueField": "scope1",
-                    "fillAlphas": 0,
-                    "type": "smoothedLine",
-                    "balloonText": "<span style='font-size:13px;'>[[value]]</span>",  // Custom font size'#FFB200', '#667BC6', '#D1E9F6'
-                    "balloon": {
-                        "adjustBorderColor": false,
-                        "color": "#000",  // Text color
-                        "fillColor": "#FFB200",  // Background color (same as line color)
-                        "borderColor": "#FFB200"
-                    }
-                },
-                {
-                    "valueAxis": "v1",
-                    "lineColor": "#667BC6",
-                    "bulletBorderThickness": 1,
-                    "hideBulletsCount": 30,
-                    "title": "UPS",
-                    "valueField": "scope2",
-                    "fillAlphas": 0,
-                    "type": "smoothedLine",
-                    "balloonText": "<span style='font-size:13px;'>[[value]]</span>",  // Custom font size
-                    "balloon": {
-                        "adjustBorderColor": false,
-                        "color": "#000",  // Text color
-                        "fillColor": "#667BC6",  // Background color (same as line color)
-                        "borderColor": "#667BC6"
-                    }
-                },
-                {
-                    "valueAxis": "v1",
-                    "lineColor": "#D1E9F6",
-                    "bulletBorderThickness": 1,
-                    "hideBulletsCount": 30,
-                    "title": "RT & LTG",
-                    "valueField": "scope3",
-                    "fillAlphas": 0,
-                    "type": "smoothedLine",
-                    "balloonText": "<span style='font-size:13px;'>[[value]]</span>",  // Custom font size
-                    "balloon": {
-                        "adjustBorderColor": false,
-                        "color": "#000",  // Text color
-                        "fillColor": "#D1E9F6",  // Background color (same as line color)
-                        "borderColor": "#D1E9F6"
-                    }
-                }],
-                "chartScrollbar": {
-                    "selectedGraphLineColor": "#888",
-                    "position": "bottom",   // Set scrollbar position to bottom
-                    "offset": 20           // Ensure some offset from the chart
-                },
-                "chartCursor": {
-                    "cursorPosition": "mouse",
-                    "cursorColor": "#000000"
-                },
-                "categoryField": "date",
-                "categoryAxis": {
-                    "parseDates": true,
-                    "axisColor": "#000",
-                    "minorGridEnabled": true
-                },
-                "export": {
-                    "enabled": true,
-                    "position": "bottom-right"
-                },
-                "zoomControl": {
-                    "zoomControlEnabled": false
-                }
+                // Convert timestamp back to a readable date
+                const formattedDate = new Date(item.date).toLocaleDateString("en-US", {
+                    // year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                });
+                item.date = formattedDate;
+                console.log("Formatted item date: " + formattedDate);
             });
 
-            epiChart.addListener("dataUpdated", zoomChart);
-            zoomChart();
 
-            function zoomChart() {
-                epiChart.zoomToIndexes(epiChart.dataProvider.length - 70, epiChart.dataProvider.length - 1);
+            // Create axes
+            var categoryAxis = epiChart.xAxes.push(new am4charts.CategoryAxis());
+            categoryAxis.dataFields.category = "date"; // Use 'date' instead of 'year'
+            categoryAxis.renderer.minGridDistance = 80;
+            // categoryAxis.renderer.grid.template.location = 2;
+            // categoryAxis.startLocation = 1;
+            // categoryAxis.endLocation = 1.5;
+            categoryAxis.renderer.labels.template.horizontalCenter = "middle"; // Center labels
+            categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center labels
+
+            var valueAxis = epiChart.yAxes.push(new am4charts.ValueAxis());
+            valueAxis.baseValue = 0;
+
+            // Function to create series
+            function createSeries(valueField, name, color) {
+                var series = epiChart.series.push(new am4charts.LineSeries());
+                series.dataFields.valueY = valueField;
+                series.dataFields.categoryX = "date"; // Use 'date' instead of 'year'
+                series.name = name;
+                series.strokeWidth = 2;
+                series.tensionX = 0.77;
+                series.stroke = color;
+
+                // Bullet to display tooltips
+                var bullet = series.bullets.push(new am4charts.Bullet());
+                bullet.tooltipText = "{valueY}";
+
+                bullet.adapter.add("fill", function (fill, target) {
+                    // If the value is negative, color the bullet red, else use the series color
+                    if (target.dataItem.valueY < 0) {
+                        return am4core.color("#FF0000"); // Red for negative values
+                    }
+                    return series.stroke; // Use the series stroke color (the color passed to createSeries)
+                });
+
+                return series;
             }
+            epiChart.legend = new am4charts.Legend();
+            epiChart.legend.position = "top";
+            epiChart.legend.paddingBottom = 10;
+            epiChart.legend.labels.template.maxWidth = 95;
+            // Create three series with different data fields and colors
+            createSeries("scope1date", "HVAC", am4core.color("#FFB200"));
+            createSeries("scope2date", "UPS", am4core.color("#667BC6"));
+            createSeries("scope3date", "RT & LTG", am4core.color("#D1E9F6"));
 
-        }
+            // Add scrollbar
+            // var scrollbarX = new am4charts.XYChartScrollbar();
+            // scrollbarX.series.push(chart.series.values[0]);  // Add the first series to the scrollbar
+            // chart.scrollbarX = scrollbarX;
+            // scrollbarX.height = 30;
+            epiChart.scrollbarX = new am4core.Scrollbar();
+            epiChart.scrollbarX.marginBottom = 20;
+
+            epiChart.cursor = new am4charts.XYCursor();
+            epiChart.logo.disabled = true;
+
+        });
     }
 
     async function epiBarChart() {
-        // Call replaceEpiChart function to handle any necessary replacements
-
+        const scopeData = [[], [], []]; // Scope 1, Scope 2, Scope 3
+        const last12MonthsData = getLast12Months1();
+        console.log("bar " + last12MonthsData);
+    
+        for (const month of last12MonthsData) {
+            const scopeUrls = [
+                `${url}/obix/histories/SqlServerDatabase/YearlyScope1/~historyQuery?start=${month.startDate}T23:59:59.000+05:30&limit=1`,
+                `${url}/obix/histories/SqlServerDatabase/YearlyScope2/~historyQuery?start=${month.startDate}T23:59:59.000+05:30&limit=1`,
+                `${url}/obix/histories/SqlServerDatabase/YearlyScope3/~historyQuery?start=${month.startDate}T23:59:59.000+05:30&limit=1`
+            ];
+    
+            for (let i = 0; i < scopeUrls.length; i++) {
+                try {
+                    const response = await fetch(scopeUrls[i]);
+                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const xml = parser.parseFromString(text, "application/xml");
+            
+                    const records = xml.getElementsByTagName("list");
+                    for (let record of records) {
+                        // Fetch `abstime` and `real` values
+                        const abstime = record.getElementsByTagName("abstime")[0]?.getAttribute("val");
+                        const realValue = record.getElementsByTagName("real")[0]?.getAttribute("val");
+            
+                        // Match the `abstime` with the corresponding `month.startDate`
+                        if (abstime && realValue) {
+                            const abstimeDate = new Date(abstime);
+                            const formattedAbstime = `${abstimeDate.getFullYear()}-${String(abstimeDate.getMonth() + 1).padStart(2, '0')}-${String(abstimeDate.getDate()).padStart(2, '0')}`;
+            
+                            if (formattedAbstime === month.startDate) {
+                                scopeData[i].push(parseFloat(realValue).toFixed(2));
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error fetching data for scope ${i + 1}:`, error);
+                    scopeData[i].push(null); // Push null to maintain alignment
+                }
+            }            
+        }
+        const existingStyle = document.getElementById('chartdiv5-styles');
+            if (existingStyle) {
+                existingStyle.remove();
+            }
         // Prepare options for the new ApexCharts bar chart
         const options = {
-            series: [{
-                name: 'HVAC',
-                data: getRandomData() // Replace with your actual HVAC data
-            }, {
-                name: 'UPS',
-                data: getRandomData() // Replace with your actual UPS data
-            }, {
-                name: 'RT & LTG',
-                data: getRandomData() // Replace with your actual RT & LTG data
-            }],
+            series: [
+                { name: 'HVAC', data: scopeData[0] },
+                { name: 'UPS', data: scopeData[1] },
+                { name: 'RT & LTG', data: scopeData[2] }
+            ],
             chart: {
                 type: 'bar',
                 height: '100%',
@@ -3631,7 +3905,7 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
                 enabled: false, // Disable the values on top of the bars
             },
             xaxis: {
-                categories: getLast12Months(), // Last 12 months from October 2023 to September 2024
+                categories: getLast12Months()
             },
             // yaxis: {
             //     title: {
@@ -3672,151 +3946,156 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
     }
 
     async function lineChartMonthlyEpi() {
-        const today = new Date();
-        const currentMonth = today.getMonth();
-        const startDate = new Date(today.getFullYear(), currentMonth - 1, 1);
-        const endDate = new Date(today.getFullYear(), currentMonth, 0);
-        const startISO = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
-        const endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+        am4core.ready(async function () {
 
-        const scopes = ['scope1', 'scope2', 'scope3'];
-        let scopeValues = [];
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const startDate = new Date(today.getFullYear(), currentMonth - 1, 1);
+            const endDate = new Date(today.getFullYear(), currentMonth, 0);
 
-        for (let scope of scopes) {
-            const response = await fetch(`https://localhost/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${startISO}&end=${endISO}`);
-            const text = await response.text();
+            const startISO = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+            const endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
 
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(text, "text/xml");
-            const objs = xmlDoc.getElementsByTagName("obj");
+            const waters = ['scope1date', 'scope2date', 'scope3date'];
+            let waterValues = [];
 
-            for (let i = 0; i < objs.length; i++) {
-                const obj = objs[i];
-                const abstime = obj.getElementsByTagName("abstime")[0];
-                const real = obj.getElementsByTagName("real")[0];
+            // Fetch data asynchronously for each scope
+            for (let scope of waters) {
+                const urlToFetch = `${url}/obix/histories/SqlServerDatabase/${scope}/~historyQuery?start=${startISO}T23:59:59.000+05:30&end=${endISO}T23:59:59.000+05:30`;
+                console.log(urlToFetch);
+                try {
+                    const response = await fetch(urlToFetch);
+                    console.log(response);
+                    if (!response.ok) {
+                        console.error(`Error fetching data for ${scope}: ${response.status} - ${response.statusText}`);
+                        continue;
+                    }
 
-                if (abstime && real) {
-                    const dateText = abstime.getAttribute("val");
-                    const valueText = real.getAttribute("val");
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(text, "text/xml");
+                    const objs = xmlDoc.getElementsByTagName("obj");
 
-                    if (valueText && dateText) {
-                        const value = parseFloat(valueText).toFixed(2);
-                        const date = new Date(dateText);
+                    for (let i = 0; i < objs.length; i++) {
+                        const obj = objs[i];
+                        const abstime = obj.getElementsByTagName("abstime")[0];
+                        const real = obj.getElementsByTagName("real")[0];
 
-                        const existingEntry = scopeValues.find(entry => entry.date.getTime() === date.getTime());
+                        if (abstime && real) {
+                            const dateText = abstime.getAttribute("val");
+                            const valueText = real.getAttribute("val");
 
-                        if (existingEntry) {
-                            existingEntry[scope] = parseFloat(value);
-                        } else {
-                            scopeValues.push({
-                                date: date,
-                                [scope]: parseFloat(value)
-                            });
+                            if (valueText && dateText) {
+                                const value = parseFloat(valueText).toFixed(2);
+                                const date = new Date(dateText);
+                                const formattedDate = date.toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric"
+                                });
+                                const dateStr = date.toDateString();  // Use toDateString to compare without time
+
+                                const existingEntry = waterValues.find(entry => entry.date.toDateString() === dateStr);
+
+                                if (existingEntry) {
+                                    existingEntry[scope] = parseFloat(value);
+                                } else {
+                                    waterValues.push({
+                                        date: date,
+                                        [scope]: parseFloat(value)
+                                    });
+                                }
+                            }
                         }
                     }
+                } catch (error) {
+                    console.error(`Error fetching data for ${scope}: ${error.message}`);
                 }
             }
-        }
 
-        // Check if no data is found
-        if (scopeValues.length === 0) {
-            alert('No data to display for the selected range');
-            return;
-        }
-        epiChart = AmCharts.makeChart("chartdiv5", {
-            "type": "serial",
-            "theme": "white",
-            "color": "#000",
-            "legend": {
-                "useGraphSettings": true,
-                "color": "#000",
-                "position": "top",
-                "align": "center",
-                "marginBottom": 10,
-                "valueText": ""
-            },
-            "dataProvider": scopeValues,
-            "synchronizeGrid": true,
-            "valueAxes": [{
-                "id": "v1",
-                "axisColor": "#000",
-                "axisThickness": 0.5,
-                "axisAlpha": 1,
-                "position": "left"
-            }],
-            "graphs": [{
-                "valueAxis": "v1",
-                "lineColor": "#FFB200",
-                "bulletBorderThickness": 1,
-                "hideBulletsCount": 30,
-                "title": "HVAC",
-                "valueField": "scope1",
-                "fillAlphas": 0,
-                "type": "smoothedLine",
-                "balloonText": "<span style='font-size:13px;'>[[value]]</span>",
-                "balloon": {
-                    "adjustBorderColor": false,
-                    "color": "#000",
-                    "fillColor": "#FFB200",
-                    "borderColor": "#FFB200"
-                }
-            }, {
-                "valueAxis": "v1",
-                "lineColor": "#667BC6",
-                "bulletBorderThickness": 1,
-                "hideBulletsCount": 30,
-                "title": "UPS",
-                "valueField": "scope2",
-                "fillAlphas": 0,
-                "type": "smoothedLine",
-                "balloonText": "<span style='font-size:13px;'>[[value]]</span>",
-                "balloon": {
-                    "adjustBorderColor": false,
-                    "color": "#000",
-                    "fillColor": "#667BC6",
-                    "borderColor": "#667BC6"
-                }
-            }, {
-                "valueAxis": "v1",
-                "lineColor": "#D1E9F6",
-                "bulletBorderThickness": 1,
-                "hideBulletsCount": 30,
-                "title": "RT & LTG",
-                "valueField": "scope3",
-                "fillAlphas": 0,
-                "type": "smoothedLine",
-                "balloonText": "<span style='font-size:13px;'>[[value]]</span>",
-                "balloon": {
-                    "adjustBorderColor": false,
-                    "color": "#000",
-                    "fillColor": "#D1E9F6",
-                    "borderColor": "#D1E9F6"
-                }
-            }],
-            "chartScrollbar": {
-                "offset": 20
-            },
-            "chartCursor": {
-                "cursorPosition": "mouse",
-                "cursorColor": "#000000",
-            },
-            "categoryField": "date",
-            "categoryAxis": {
-                "parseDates": true,
-                "axisColor": "#000",
-                "minorGridEnabled": true
-            },
-            "export": {
-                "enabled": true // Disable export menu
+            // Themes begin
+            am4core.useTheme(am4themes_animated);
+            // Themes end
+
+            // Create chart instance
+            epiChart = am4core.create("chartdiv5", am4charts.XYChart);
+            epiChart.paddingRight = 20;
+
+            // Add data
+            epiChart.data = waterValues;
+            waterValues.forEach(item => {
+                item.date = new Date(item.date).getTime();  // Convert to timestamp
+                console.log("item date (timestamp): " + item.date);
+
+                // Convert timestamp back to a readable date
+                const formattedDate = new Date(item.date).toLocaleDateString("en-US", {
+                    // year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                });
+                item.date = formattedDate;
+                console.log("Formatted item date: " + formattedDate);
+            });
+
+
+            // Create axes
+            var categoryAxis = epiChart.xAxes.push(new am4charts.CategoryAxis());
+            categoryAxis.dataFields.category = "date"; // Use 'date' instead of 'year'
+            categoryAxis.renderer.minGridDistance = 80;
+            // categoryAxis.renderer.grid.template.location = 2;
+            // categoryAxis.startLocation = 1;
+            // categoryAxis.endLocation = 1.5;
+            categoryAxis.renderer.labels.template.horizontalCenter = "middle"; // Center labels
+            categoryAxis.renderer.labels.template.verticalCenter = "middle"; // Center labels
+
+            var valueAxis = epiChart.yAxes.push(new am4charts.ValueAxis());
+            valueAxis.baseValue = 0;
+
+            // Function to create series
+            function createSeries(valueField, name, color) {
+                var series = epiChart.series.push(new am4charts.LineSeries());
+                series.dataFields.valueY = valueField;
+                series.dataFields.categoryX = "date"; // Use 'date' instead of 'year'
+                series.name = name;
+                series.strokeWidth = 2;
+                series.tensionX = 0.77;
+                series.stroke = color;
+
+                // Bullet to display tooltips
+                var bullet = series.bullets.push(new am4charts.Bullet());
+                bullet.tooltipText = "{valueY}";
+
+                bullet.adapter.add("fill", function (fill, target) {
+                    // If the value is negative, color the bullet red, else use the series color
+                    if (target.dataItem.valueY < 0) {
+                        return am4core.color("#FF0000"); // Red for negative values
+                    }
+                    return series.stroke; // Use the series stroke color (the color passed to createSeries)
+                });
+
+                return series;
             }
+            
+            epiChart.legend = new am4charts.Legend();
+            epiChart.legend.position = "top";
+            epiChart.legend.paddingBottom = 10;
+            epiChart.legend.labels.template.maxWidth = 95;
+            // Create three series with different data fields and colors
+            createSeries("scope1date", "HVAC", am4core.color("#FFB200"));
+            createSeries("scope2date", "UPS", am4core.color("#667BC6"));
+            createSeries("scope3date", "RT & LTG", am4core.color("#D1E9F6"));
+
+            // Add scrollbar
+            // var scrollbarX = new am4charts.XYChartScrollbar();
+            // scrollbarX.series.push(chart.series.values[0]);  // Add the first series to the scrollbar
+            // chart.scrollbarX = scrollbarX;
+            // scrollbarX.height = 30;
+            epiChart.scrollbarX = new am4core.Scrollbar();
+            epiChart.scrollbarX.marginBottom = 20;
+
+            epiChart.cursor = new am4charts.XYCursor();
+            epiChart.logo.disabled = true;
+
         });
-
-        epiChart.addListener("dataUpdated", zoomChart);
-        zoomChart();
-
-        function zoomChart() {
-            epiChart.zoomToIndexes(epiChart.dataProvider.length - 70, epiChart.dataProvider.length - 1);
-        }
     }
 
     $("#startDateEPI, #endDateEPI").on("change", async function () {
@@ -3989,55 +4268,57 @@ console.log("formated " + formattedDate); // Logs: 2024-11-01
     });
 
     /* EPI Index end */
-   function getLast12Months() {
-    const months = [];
-    const currentDate = new Date();
-
-    // Generate the last 12 months
-    for (let i = 0; i < 12; i++) {
-        // Set the month back by 1 month for each iteration
-        currentDate.setMonth(currentDate.getMonth() - 1);
-
-        // Format the month as "Mon YYYY"
-        const formattedMonth = currentDate.toLocaleString('en-US', { month: 'short', year: 'numeric' });
-        months.push(formattedMonth); // Add formatted month and year
+    function getLast12Months() {
+        const months = [];
+        const currentDate = new Date();
+        // Generate the last 12 months
+        for (let i = 1; i <= 12; i++) {
+            const monthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+        // Format as "Nov 2023"
+        const formattedMonth = monthDate.toLocaleString('default', { month: 'short', year: 'numeric' });
+        months.push(formattedMonth);
+        }
+        return months.reverse(); // Return the last 12 months
     }
-
-    return months.reverse(); // Return the last 12 months in the correct order
-}
-
- function getLast12Months1() {
-    const months = [];
-    const now = new Date();
-    const startMonth = new Date(now.getFullYear() - 1, now.getMonth()); // Start from December of last year
-
-    for (let i = 0; i < 12; i++) {
-        const monthDate = new Date(startMonth.getFullYear(), startMonth.getMonth() + i, 1); // Move forward by months
-        months.push({
-            startDate: `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}-${String(monthDate.getDate()).padStart(2, '0')}`,
-        });
-    }
-
-    return months;
-}
-
-
     // function getLast12Months1() {
     //     const months = [];
     //     const now = new Date();
-
-    //     for (let i = 0; i <= 12; i++) {
-    //         // Calculate the first day of the month for the current iteration
+    
+    //     for (let i = 11; i >= 0; i--) {
     //         const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth() - i, 1);
-
-    //         // Push the formatted first day of the month (YYYY-MM-DD)
+    
+    //         const monthName = firstDayOfMonth.toLocaleString('default', {
+    //             month: 'short'
+    //         }); // Get abbreviated month name (e.g., Jan, Feb)
+    
+    //         const year = firstDayOfMonth.getFullYear();
+    
     //         months.push({
-    //             startDate: `${firstDayOfMonth.getFullYear()}-${String(firstDayOfMonth.getMonth() + 1).padStart(2, '0')}-${String(firstDayOfMonth.getDate()).padStart(2, '0')}`
+    //             startDate: `${firstDayOfMonth.getFullYear()}-${String(firstDayOfMonth.getMonth() + 1).padStart(2, '0')}-${String(firstDayOfMonth.getDate()).padStart(2, '0')}`,
+    //             monthName: `${monthName} ${year}` // Add formatted month name
     //         });
     //     }
-
+    //     //console.log("months " + months);
     //     return months;
     // }
+    
+    
+    function getLast12Months1() {
+        const months = [];
+        const now = new Date();
+
+        for (let i = 0; i <12; i++) {
+            // Calculate the first day of the month for the current iteration
+            const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth() - i, 1);
+
+            // Push the formatted first day of the month (YYYY-MM-DD)
+            months.push({
+                startDate: `${firstDayOfMonth.getFullYear()}-${String(firstDayOfMonth.getMonth() + 1).padStart(2, '0')}-${String(firstDayOfMonth.getDate()).padStart(2, '0')}`
+            });
+        }
+
+        return months;
+    }
     // Example function to generate random data for each scope
     function getRandomData() {
         return Array.from({ length: 12 }, () => Math.floor(Math.random() * 100) + 20); // Random data for 12 months
